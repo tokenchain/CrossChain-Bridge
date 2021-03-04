@@ -21,20 +21,28 @@ var (
 	latestGasPrice *big.Int
 )
 
+func (b *Bridge) getTokenConfig(args *tokens.BuildTxArgs) (*tokens.TokenConfig, error) {
+	if args.SwapType != tokens.NoSwapType {
+		tokenCfg := b.GetTokenConfig(args.PairID)
+		if tokenCfg == nil {
+			return nil, tokens.ErrUnknownPairID
+		}
+		return tokenCfg, nil
+	}
+	return nil, nil
+}
+
 // BuildRawTransaction build raw tx
 func (b *Bridge) BuildRawTransaction(args *tokens.BuildTxArgs) (rawTx interface{}, err error) {
 	var input []byte
 	var tokenCfg *tokens.TokenConfig
 	if args.Input == nil {
-		if args.SwapType != tokens.NoSwapType {
-			pairID := args.PairID
-			tokenCfg = b.GetTokenConfig(pairID)
-			if tokenCfg == nil {
-				return nil, tokens.ErrUnknownPairID
-			}
-			if args.From == "" {
-				args.From = tokenCfg.DcrmAddress // from
-			}
+		tokenCfg, err = b.getTokenConfig(args)
+		if err != nil {
+			return nil, err
+		}
+		if args.SwapType != tokens.NoSwapType && args.From == "" {
+			args.From = tokenCfg.DcrmAddress // from
 		}
 		switch args.SwapType {
 		case tokens.SwapinType:
@@ -42,25 +50,16 @@ func (b *Bridge) BuildRawTransaction(args *tokens.BuildTxArgs) (rawTx interface{
 				return nil, tokens.ErrBuildSwapTxInWrongEndpoint
 			}
 			err = b.buildSwapinTxInput(args)
-			if err != nil {
-				return nil, err
-			}
-			input = *args.Input
 		case tokens.SwapoutType:
 			if !b.IsSrc {
 				return nil, tokens.ErrBuildSwapTxInWrongEndpoint
 			}
-			if tokenCfg.IsErc20() {
-				err = b.buildErc20SwapoutTxInput(args)
-				if err != nil {
-					return nil, err
-				}
-				input = *args.Input
-			} else {
-				args.To = args.Bind
-				input = []byte(tokens.UnlockMemoPrefix + args.SwapID)
-			}
+			err = b.buildSwapoutTxInput(args, tokenCfg)
 		}
+		if err != nil {
+			return nil, err
+		}
+		input = *args.Input
 	} else {
 		input = *args.Input
 		if args.SwapType != tokens.NoSwapType {

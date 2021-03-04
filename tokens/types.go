@@ -37,6 +37,9 @@ type ChainConfig struct {
 	MaxGasPriceFluctPercent uint64 `json:",omitempty"`
 	WaitTimeToReplace       int64  // seconds
 	MaxReplaceCount         int
+
+	VaultContract      string `json:",omitempty"`
+	SwapDeadlineOffset int64  `json:",omitempty"` // seconds
 }
 
 // GatewayConfig struct
@@ -159,8 +162,22 @@ func (s SwapTxType) String() string {
 	}
 }
 
+// VaultSwapInfo struct
+type VaultSwapInfo struct {
+	ForNative     bool     `json:"forNative,omitempty"`
+	ForUnderlying bool     `json:"forUnderlying,omitempty"`
+	Token         string   `json:"token"`
+	Path          []string `json:"path,omitempty"`
+	AmountOutMin  *big.Int `json:"amountOutMin,omitempty"`
+	FromChainID   *big.Int `json:"fromChainID"`
+	ToChainID     *big.Int `json:"toChainID"`
+	LogIndex      int      `json:"logIndex"`
+}
+
 // TxSwapInfo struct
 type TxSwapInfo struct {
+	VaultSwapInfo `json:"swapInfo,omitempty"`
+
 	PairID    string   `json:"pairid"`
 	Hash      string   `json:"hash"`
 	Height    uint64   `json:"height"`
@@ -183,6 +200,8 @@ type TxStatus struct {
 
 // SwapInfo struct
 type SwapInfo struct {
+	VaultSwapInfo `json:"swapInfo,omitempty"`
+
 	PairID     string     `json:"pairid,omitempty"`
 	SwapID     string     `json:"swapid,omitempty"`
 	SwapType   SwapType   `json:"swaptype,omitempty"`
