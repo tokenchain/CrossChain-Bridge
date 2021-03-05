@@ -147,6 +147,7 @@ const (
 	SwapinTx     SwapTxType = iota // 0
 	SwapoutTx                      // 1
 	P2shSwapinTx                   // 2
+	VaultSwapTx                    // 3
 )
 
 func (s SwapTxType) String() string {
@@ -157,6 +158,8 @@ func (s SwapTxType) String() string {
 		return "swapouttx"
 	case P2shSwapinTx:
 		return "p2shswapintx"
+	case VaultSwapTx:
+		return "vaultswaptx"
 	default:
 		return fmt.Sprintf("unknown swaptx type %d", s)
 	}
