@@ -17,7 +17,7 @@ const (
 
 // MgoSwap registered swap
 type MgoSwap struct {
-	Key       string     `bson:"_id"` // txid + pairid + bind
+	Key       string     `bson:"_id"` // txid + pairid + bind (vault: txid + logIndex + fromChainID)
 	PairID    string     `bson:"pairid"`
 	TxID      string     `bson:"txid"`
 	TxTo      string     `bson:"txto"`
@@ -26,11 +26,20 @@ type MgoSwap struct {
 	Status    SwapStatus `bson:"status"`
 	Timestamp int64      `bson:"timestamp"`
 	Memo      string     `bson:"memo"`
+
+	ForNative     bool     `bson:"forNative,omitempty"`
+	ForUnderlying bool     `bson:"forUnderlying,omitempty"`
+	Token         string   `bson:"token"`
+	Path          []string `bson:"path,omitempty"`
+	AmountOutMin  string   `bson:"amountOutMin,omitempty"`
+	FromChainID   string   `bson:"fromChainID"`
+	ToChainID     string   `bson:"toChainID"`
+	LogIndex      int      `bson:"logIndex"`
 }
 
 // MgoSwapResult swap result (verified swap)
 type MgoSwapResult struct {
-	Key        string     `bson:"_id"` // txid + pairid + bind
+	Key        string     `bson:"_id"` // txid + pairid + bind (vault: txid + logIndex + fromChainID)
 	PairID     string     `bson:"pairid"`
 	TxID       string     `bson:"txid"`
 	TxTo       string     `bson:"txto"`
@@ -50,6 +59,15 @@ type MgoSwapResult struct {
 	Status     SwapStatus `bson:"status"`
 	Timestamp  int64      `bson:"timestamp"`
 	Memo       string     `bson:"memo"`
+
+	ForNative     bool     `bson:"forNative,omitempty"`
+	ForUnderlying bool     `bson:"forUnderlying,omitempty"`
+	Token         string   `bson:"token"`
+	Path          []string `bson:"path,omitempty"`
+	AmountOutMin  string   `bson:"amountOutMin,omitempty"`
+	FromChainID   string   `bson:"fromChainID"`
+	ToChainID     string   `bson:"toChainID"`
+	LogIndex      int      `bson:"logIndex"`
 }
 
 // SwapResultUpdateItems swap update items
