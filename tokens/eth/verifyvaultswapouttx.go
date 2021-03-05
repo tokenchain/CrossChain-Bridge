@@ -7,6 +7,7 @@ import (
 
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/log"
+	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 	"github.com/anyswap/CrossChain-Bridge/types"
 )
@@ -72,10 +73,10 @@ func (b *Bridge) VerifyVaultSwapTxIndex(txHash string, logIndex int, allowUnstab
 }
 
 func (b *Bridge) checkVaultSwapInfo(swapInfo *tokens.TxSwapInfo) error {
-	dstBridge := tokens.GetCrossChainBridgeByChainID(swapInfo.ToChainID)
 	if !b.checkSwapValue(swapInfo.Value) {
 		return tokens.ErrTxWithWrongValue
 	}
+	dstBridge := tokens.GetCrossChainBridgeByChainID(swapInfo.ToChainID)
 	if !dstBridge.IsValidAddress(swapInfo.Bind) {
 		log.Debug("wrong bind address in vault swap", "txid", swapInfo.Hash, "logIndex", swapInfo.LogIndex, "bind", swapInfo.Bind)
 		return tokens.ErrTxWithWrongMemo
@@ -84,7 +85,9 @@ func (b *Bridge) checkVaultSwapInfo(swapInfo *tokens.TxSwapInfo) error {
 }
 
 func (b *Bridge) checkSwapValue(value *big.Int) bool {
-	return false // TODO
+	chainID := b.ChainConfig.GetChainID()
+	token := params.GetTokenConfig(chainID)
+	return tokens.CheckTokenSwapValue(token, value)
 }
 
 func (b *Bridge) verifyVaultSwapTxReceipt(swapInfo *tokens.TxSwapInfo, receipt *types.RPCTxReceipt, logIndex int) (err error) {

@@ -28,6 +28,7 @@ type BtcExtraConfig struct {
 // ChainConfig struct
 type ChainConfig struct {
 	BlockChain    string
+	ChainID       string
 	NetID         string
 	Confirmations *uint64
 	InitialHeight *uint64
@@ -40,6 +41,8 @@ type ChainConfig struct {
 
 	VaultContract      string `json:",omitempty"`
 	SwapDeadlineOffset int64  `json:",omitempty"` // seconds
+
+	chainID *big.Int
 }
 
 // GatewayConfig struct
@@ -289,7 +292,17 @@ func (c *ChainConfig) CheckConfig() error {
 	if c.InitialHeight == nil {
 		return errors.New("token must config 'InitialHeight'")
 	}
+	chainID, ok := new(big.Int).SetString(c.ChainID, 0)
+	if !ok {
+		return errors.New("wrong chain ID")
+	}
+	c.chainID = chainID
 	return nil
+}
+
+// GetChainID get chain id
+func (c *ChainConfig) GetChainID() *big.Int {
+	return c.chainID
 }
 
 // CheckConfig check token config

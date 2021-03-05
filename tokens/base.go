@@ -117,20 +117,32 @@ func GetBigValueThreshold(pairID string, isSrc bool) *big.Int {
 // CheckSwapValue check swap value is in right range
 func CheckSwapValue(pairID string, value *big.Int, isSrc bool) bool {
 	token := GetTokenConfig(pairID, isSrc)
+	return CheckTokenSwapValue(token, value)
+}
+
+// CheckTokenSwapValue check swap value is in right range
+func CheckTokenSwapValue(token *TokenConfig, value *big.Int) bool {
+	if value == nil {
+		return false
+	}
 	if value.Cmp(token.minSwap) < 0 {
 		return false
 	}
 	if value.Cmp(token.maxSwap) > 0 {
 		return false
 	}
-	swappedValue := CalcSwappedValue(pairID, value, isSrc)
+	swappedValue := CalcSwapValue(token, value)
 	return swappedValue.Sign() > 0
 }
 
 // CalcSwappedValue calc swapped value (get rid of fee)
 func CalcSwappedValue(pairID string, value *big.Int, isSrc bool) *big.Int {
 	token := GetTokenConfig(pairID, isSrc)
+	return CalcSwapValue(token, value)
+}
 
+// CalcSwapValue calc swap value (get rid of fee)
+func CalcSwapValue(token *TokenConfig, value *big.Int) *big.Int {
 	if *token.SwapFeeRate == 0.0 {
 		return value
 	}
