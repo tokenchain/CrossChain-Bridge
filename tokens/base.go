@@ -73,6 +73,11 @@ func (b *CrossChainBridgeBase) GetDcrmPublicKey(pairID string) string {
 	return ""
 }
 
+// GetCrossChainBridgeByChainID get bridge by chain id
+func GetCrossChainBridgeByChainID(chainID *big.Int) CrossChainBridge {
+	return nil // TODO
+}
+
 // GetCrossChainBridge get bridge of specified endpoint
 func GetCrossChainBridge(isSrc bool) CrossChainBridge {
 	if isSrc {
