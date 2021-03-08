@@ -46,14 +46,8 @@ func (b *Bridge) BuildRawTransaction(args *tokens.BuildTxArgs) (rawTx interface{
 		}
 		switch args.SwapType {
 		case tokens.SwapinType:
-			if b.IsSrc {
-				return nil, tokens.ErrBuildSwapTxInWrongEndpoint
-			}
 			err = b.buildSwapinTxInput(args)
 		case tokens.SwapoutType:
-			if !b.IsSrc {
-				return nil, tokens.ErrBuildSwapTxInWrongEndpoint
-			}
 			err = b.buildSwapoutTxInput(args, tokenCfg)
 		}
 		if err != nil {

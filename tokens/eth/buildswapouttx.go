@@ -7,6 +7,7 @@ import (
 
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/log"
+	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 )
 
@@ -25,12 +26,16 @@ var (
 )
 
 func (b *Bridge) buildSwapoutTxInput(args *tokens.BuildTxArgs, tokenCfg *tokens.TokenConfig) (err error) {
+	isVaultSwap := params.IsVaultSwap() || b.ChainConfig.VaultContract != ""
+	if !isVaultSwap && !b.IsSrc {
+		return tokens.ErrBuildSwapTxInWrongEndpoint
+	}
 	switch {
-	case b.ChainConfig.VaultContract != "":
-		if len(args.Path) == 0 {
-			return b.buildVaultSwapoutTxInput(args)
+	case isVaultSwap:
+		if len(args.Path) > 0 && args.AmountOutMin != nil {
+			return b.buildVaultSwapoutTradeTxInput(args)
 		}
-		return b.buildVaultSwapoutTradeTxInput(args)
+		return b.buildVaultSwapoutTxInput(args)
 	case tokenCfg.IsErc20():
 		return b.buildErc20SwapoutTxInput(args)
 	default:

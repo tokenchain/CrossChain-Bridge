@@ -21,6 +21,7 @@ var (
 	ErrTxBeforeInitialHeight         = errors.New("transaction before initial block height")
 	ErrAddressIsInBlacklist          = errors.New("address is in black list")
 	ErrVaultSwapNotSupport           = errors.New("bridge does not support vault swap")
+	ErrNoBridgeForChainID            = errors.New("no bridge for chain id")
 
 	ErrTodo = errors.New("developing: TODO")
 

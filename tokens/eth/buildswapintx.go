@@ -10,6 +10,9 @@ import (
 
 // build input for calling `Swapin(bytes32 txhash, address account, uint256 amount)`
 func (b *Bridge) buildSwapinTxInput(args *tokens.BuildTxArgs) error {
+	if b.IsSrc {
+		return tokens.ErrBuildSwapTxInWrongEndpoint
+	}
 	pairID := args.PairID
 	token := b.GetTokenConfig(pairID)
 	if token == nil {
