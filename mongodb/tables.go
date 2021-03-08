@@ -11,6 +11,9 @@ const (
 	tbRegisteredAddress string = "RegisteredAddress"
 	tbBlacklist         string = "Blacklist"
 
+	tbVaultSwaps       string = "VaultSwaps"
+	tbVaultSwapResults string = "VaultSwapResults"
+
 	keyOfSrcLatestScanInfo string = "srclatest"
 	keyOfDstLatestScanInfo string = "dstlatest"
 )

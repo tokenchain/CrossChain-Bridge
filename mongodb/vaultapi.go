@@ -1,17 +1,34 @@
 package mongodb
 
+import (
+	"fmt"
+
+	"github.com/anyswap/CrossChain-Bridge/log"
+)
+
+func getVaultSwapKey(fromChainID, txid string, logindex int) string {
+	return fmt.Sprintf("%v:%v:%v", fromChainID, txid, logindex)
+}
+
 // AddVaultSwap add swapout
 func AddVaultSwap(ms *MgoSwap) error {
-	return nil
+	ms.Key = getVaultSwapKey(ms.FromChainID, ms.TxID, ms.LogIndex)
+	err := collVaultSwap.Insert(ms)
+	if err == nil {
+		log.Info("mongodb add vault swap success", "chainid", ms.FromChainID, "txid", ms.TxID, "logindex", ms.LogIndex)
+	} else {
+		log.Debug("mongodb add vault swap failed", "chainid", ms.FromChainID, "txid", ms.TxID, "logindex", ms.LogIndex, "err", err)
+	}
+	return mgoError(err)
 }
 
 // UpdateVaultSwapStatus update swapout status
-func UpdateVaultSwapStatus(fromChainID, txid, logindex string, status SwapStatus, timestamp int64, memo string) error {
+func UpdateVaultSwapStatus(fromChainID, txid string, logindex int, status SwapStatus, timestamp int64, memo string) error {
 	return nil
 }
 
 // FindVaultSwap api
-func FindVaultSwap(fromChainID, txid, logindex string) (*MgoSwap, error) {
+func FindVaultSwap(fromChainID, txid string, logindex int) (*MgoSwap, error) {
 	return nil, nil
 }
 
@@ -26,7 +43,7 @@ func FindVaultSwapsWithChainIDAndStatus(fromChainID string, status SwapStatus, s
 }
 
 // FindVaultSwapResult api
-func FindVaultSwapResult(fromChainID, txid, logindex string) (*MgoSwapResult, error) {
+func FindVaultSwapResult(fromChainID, txid string, logindex int) (*MgoSwapResult, error) {
 	return nil, nil
 }
 

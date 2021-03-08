@@ -411,7 +411,11 @@ func RegisterVaultSwap(fromChainID, txid string) (*MapIntResult, error) {
 }
 
 // GetVaultSwap impl
-func GetVaultSwap(fromChainID, txid, logindex string) (*SwapInfo, error) {
+func GetVaultSwap(fromChainID, txid, logindexStr string) (*SwapInfo, error) {
+	logindex, err := common.GetIntFromStr(logindexStr)
+	if err != nil {
+		return nil, err
+	}
 	result, err := mongodb.FindVaultSwapResult(fromChainID, txid, logindex)
 	if err == nil {
 		return ConvertMgoSwapResultToSwapInfo(result), nil

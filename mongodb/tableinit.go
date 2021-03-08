@@ -1,6 +1,7 @@
 package mongodb
 
 import (
+	"github.com/anyswap/CrossChain-Bridge/params"
 	"gopkg.in/mgo.v2"
 )
 
@@ -14,6 +15,9 @@ var (
 	collLatestScanInfo    *mgo.Collection
 	collRegisteredAddress *mgo.Collection
 	collBlacklist         *mgo.Collection
+
+	collVaultSwap       *mgo.Collection
+	collVaultSwapResult *mgo.Collection
 )
 
 func isSwapin(collection *mgo.Collection) bool {
@@ -22,29 +26,39 @@ func isSwapin(collection *mgo.Collection) bool {
 
 // do this when reconnect to the database
 func deinintCollections() {
-	collSwapin = database.C(tbSwapins)
-	collSwapout = database.C(tbSwapouts)
-	collSwapinResult = database.C(tbSwapinResults)
-	collSwapoutResult = database.C(tbSwapoutResults)
-	collP2shAddress = database.C(tbP2shAddresses)
-	collSwapStatistics = database.C(tbSwapStatistics)
-	collLatestScanInfo = database.C(tbLatestScanInfo)
-	collRegisteredAddress = database.C(tbRegisteredAddress)
-	collBlacklist = database.C(tbBlacklist)
+	if params.IsVaultSwap() {
+		collVaultSwap = database.C(tbVaultSwaps)
+		collVaultSwapResult = database.C(tbVaultSwapResults)
+	} else {
+		collSwapin = database.C(tbSwapins)
+		collSwapout = database.C(tbSwapouts)
+		collSwapinResult = database.C(tbSwapinResults)
+		collSwapoutResult = database.C(tbSwapoutResults)
+		collP2shAddress = database.C(tbP2shAddresses)
+		collSwapStatistics = database.C(tbSwapStatistics)
+		collLatestScanInfo = database.C(tbLatestScanInfo)
+		collRegisteredAddress = database.C(tbRegisteredAddress)
+		collBlacklist = database.C(tbBlacklist)
+	}
 }
 
 func initCollections() {
-	initCollection(tbSwapins, &collSwapin, "timestamp", "status")
-	initCollection(tbSwapouts, &collSwapout, "timestamp", "status")
-	initCollection(tbSwapinResults, &collSwapinResult, "from", "timestamp")
-	initCollection(tbSwapoutResults, &collSwapoutResult, "from", "timestamp")
-	initCollection(tbP2shAddresses, &collP2shAddress, "p2shaddress")
-	initCollection(tbSwapStatistics, &collSwapStatistics)
-	initCollection(tbLatestScanInfo, &collLatestScanInfo)
-	initCollection(tbRegisteredAddress, &collRegisteredAddress)
-	initCollection(tbBlacklist, &collBlacklist)
+	if params.IsVaultSwap() {
+		initCollection(tbVaultSwaps, &collVaultSwap, "fromChainID", "timestamp", "status")
+		initCollection(tbVaultSwapResults, &collVaultSwapResult, "fromChainID", "from", "timestamp")
+	} else {
+		initCollection(tbSwapins, &collSwapin, "timestamp", "status")
+		initCollection(tbSwapouts, &collSwapout, "timestamp", "status")
+		initCollection(tbSwapinResults, &collSwapinResult, "from", "timestamp")
+		initCollection(tbSwapoutResults, &collSwapoutResult, "from", "timestamp")
+		initCollection(tbP2shAddresses, &collP2shAddress, "p2shaddress")
+		initCollection(tbSwapStatistics, &collSwapStatistics)
+		initCollection(tbLatestScanInfo, &collLatestScanInfo)
+		initCollection(tbRegisteredAddress, &collRegisteredAddress)
+		initCollection(tbBlacklist, &collBlacklist)
 
-	initDefaultValue()
+		initDefaultValue()
+	}
 }
 
 func initCollection(table string, collection **mgo.Collection, indexKey ...string) {
