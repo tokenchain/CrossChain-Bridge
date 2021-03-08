@@ -237,3 +237,12 @@ func GetRegisteredAddress(w http.ResponseWriter, r *http.Request) {
 	res, err := swapapi.GetRegisteredAddress(address)
 	writeResponse(w, res, err)
 }
+
+// RegisterVaultSwapHandler handler
+func RegisterVaultSwapHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	chainID := vars["chainid"]
+	txid := vars["txid"]
+	res, err := swapapi.RegisterVaultSwap(chainID, txid)
+	writeResponse(w, res, err)
+}

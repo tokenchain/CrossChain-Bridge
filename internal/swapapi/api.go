@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/mongodb"
 	"github.com/anyswap/CrossChain-Bridge/params"
@@ -349,4 +350,62 @@ func RegisterAddress(address string) (*PostResult, error) {
 func GetRegisteredAddress(address string) (*RegisteredAddress, error) {
 	address = strings.ToLower(address)
 	return mongodb.FindRegisteredAddress(address)
+}
+
+// RegisterVaultSwap register vault swap
+func RegisterVaultSwap(fromChainID, txid string) (*MapIntResult, error) {
+	log.Debug("[api] receive vault swap", "chainid", fromChainID, "txid", txid)
+	if !params.IsVaultSwap() {
+		return nil, tokens.ErrVaultSwapNotSupport
+	}
+	chainID, err := common.GetBigIntFromStr(fromChainID)
+	if err != nil {
+		return nil, newRPCInternalError(err)
+	}
+	bridge := tokens.GetCrossChainBridgeByChainID(chainID)
+	vaultSwapper, ok := bridge.(tokens.VaultSwapper)
+	if !ok {
+		return nil, tokens.ErrVaultSwapNotSupport
+	}
+	result := MapIntResult(make(map[int]string))
+	swapInfos, errs := vaultSwapper.RegisterVaultSwapTx(txid)
+	for i, swapInfo := range swapInfos {
+		logIndex := swapInfo.LogIndex
+		err := errs[i]
+		if !tokens.ShouldRegisterSwapForError(err) {
+			result[logIndex] = "failed: " + err.Error()
+			continue
+		}
+		var memo string
+		if err != nil {
+			memo = err.Error()
+		}
+		swap := &mongodb.MgoSwap{
+			PairID:    swapInfo.PairID,
+			TxID:      txid,
+			TxTo:      swapInfo.TxTo,
+			TxType:    uint32(tokens.VaultSwapTx),
+			Bind:      swapInfo.Bind,
+			Status:    mongodb.GetStatusByTokenVerifyError(err),
+			Timestamp: time.Now().Unix(),
+			Memo:      memo,
+
+			ForNative:     swapInfo.ForNative,
+			ForUnderlying: swapInfo.ForUnderlying,
+			Token:         swapInfo.Token,
+			Path:          swapInfo.Path,
+			AmountOutMin:  swapInfo.AmountOutMin.String(),
+			FromChainID:   swapInfo.FromChainID.String(),
+			ToChainID:     swapInfo.ToChainID.String(),
+			LogIndex:      swapInfo.LogIndex,
+		}
+		err = mongodb.AddSwapout(swap)
+		if err != nil {
+			log.Warn("[api] add vault swap", "swap", swap, "err", err)
+		} else {
+			log.Info("[api] add vault swap", "swap", swap)
+		}
+		result[logIndex] = "success"
+	}
+	return &result, nil
 }

@@ -82,6 +82,8 @@ func initRouter() *mux.Router {
 	registerHandleFunc(r, "/registered/{address}", restapi.GetRegisteredAddress, "GET")
 	registerHandleFunc(r, "/register/{address}", restapi.RegisterAddress, "POST")
 
+	registerHandleFunc(r, "/swap/register/{chainid}/{txid}", restapi.RegisterVaultSwapHandler, "POST")
+
 	return r
 }
 

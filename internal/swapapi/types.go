@@ -32,6 +32,9 @@ type ServerInfo struct {
 	Version    string
 }
 
+// MapIntResult type
+type MapIntResult map[int]string
+
 // PostResult post result
 type PostResult string
 

@@ -22,13 +22,13 @@ var (
 	LogAnySwapTradeTokensForNativeTopic = common.FromHex("0x278277e0209c347189add7bd92411973b5f6b8644f7ac62ea1be984ce993f8f4")
 )
 
-// VerifyVaultSwapTx impl
-func (b *Bridge) VerifyVaultSwapTx(txHash string, logIndex int, allowUnstable bool) (*tokens.TxSwapInfo, error) {
-	return nil, tokens.ErrTodo // TODO
+// RegisterVaultSwapTx impl
+func (b *Bridge) RegisterVaultSwapTx(txHash string) ([]*tokens.TxSwapInfo, []error) {
+	return nil, nil
 }
 
-// VerifyVaultSwapTxIndex impl
-func (b *Bridge) VerifyVaultSwapTxIndex(txHash string, logIndex int, allowUnstable bool) (*tokens.TxSwapInfo, error) {
+// VerifyVaultSwapTx impl
+func (b *Bridge) VerifyVaultSwapTx(txHash string, logIndex int, allowUnstable bool) (*tokens.TxSwapInfo, error) {
 	swapInfo := &tokens.TxSwapInfo{}
 	swapInfo.Hash = txHash // Hash
 

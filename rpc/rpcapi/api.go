@@ -283,3 +283,12 @@ func (s *RPCAPI) GetRegisteredAddress(r *http.Request, address *string, result *
 	}
 	return err
 }
+
+// RegisterVaultSwap api
+func (s *RPCAPI) RegisterVaultSwap(r *http.Request, fromChainID, txid *string, result *swapapi.MapIntResult) error {
+	res, err := swapapi.RegisterVaultSwap(*fromChainID, *txid)
+	if err == nil && res != nil {
+		*result = *res
+	}
+	return err
+}
