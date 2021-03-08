@@ -122,18 +122,14 @@ func GetSwapoutHandler(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, res, err)
 }
 
-func getHistoryParams(r *http.Request) (address, pairID string, offset, limit int, err error) {
-	vars := mux.Vars(r)
+func getHistoryRequestVaules(r *http.Request) (offset, limit int, err error) {
 	vals := r.URL.Query()
-
-	address = vars["address"]
-	pairID = vars["pairid"]
 
 	offsetStr, exist := vals["offset"]
 	if exist {
 		offset, err = common.GetIntFromStr(offsetStr[0])
 		if err != nil {
-			return address, pairID, offset, limit, err
+			return offset, limit, err
 		}
 	}
 
@@ -141,11 +137,21 @@ func getHistoryParams(r *http.Request) (address, pairID string, offset, limit in
 	if exist {
 		limit, err = common.GetIntFromStr(limitStr[0])
 		if err != nil {
-			return address, pairID, offset, limit, err
+			return offset, limit, err
 		}
 	}
 
-	return address, pairID, offset, limit, nil
+	return offset, limit, nil
+}
+
+func getHistoryParams(r *http.Request) (address, pairID string, offset, limit int, err error) {
+	vars := mux.Vars(r)
+
+	address = vars["address"]
+	pairID = vars["pairid"]
+	offset, limit, err = getHistoryRequestVaules(r)
+
+	return address, pairID, offset, limit, err
 }
 
 // SwapinHistoryHandler handler
@@ -245,4 +251,28 @@ func RegisterVaultSwapHandler(w http.ResponseWriter, r *http.Request) {
 	txid := vars["txid"]
 	res, err := swapapi.RegisterVaultSwap(chainID, txid)
 	writeResponse(w, res, err)
+}
+
+// GetVaultSwapHandler handler
+func GetVaultSwapHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	chainID := vars["chainid"]
+	txid := vars["txid"]
+	logindex := vars["logindex"]
+	res, err := swapapi.GetVaultSwap(chainID, txid, logindex)
+	writeResponse(w, res, err)
+}
+
+// GetVaultSwapHistoryHandler handler
+func GetVaultSwapHistoryHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	chainID := vars["chainid"]
+	address := vars["address"]
+	offset, limit, err := getHistoryRequestVaules(r)
+	if err != nil {
+		writeResponse(w, nil, err)
+	} else {
+		res, err := swapapi.GetVaultSwapHistory(chainID, address, offset, limit)
+		writeResponse(w, res, err)
+	}
 }

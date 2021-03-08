@@ -52,6 +52,14 @@ type SwapInfo struct {
 	To            string     `json:"to"`
 	Bind          string     `json:"bind"`
 	Value         string     `json:"value"`
+	ForNative     bool       `json:"forNative,omitempty"`
+	ForUnderlying bool       `json:"forUnderlying,omitempty"`
+	Token         string     `json:"token,omitempty"`
+	Path          []string   `json:"path,omitempty"`
+	AmountOutMin  string     `json:"amountOutMin,omitempty"`
+	FromChainID   string     `json:"fromChainID"`
+	ToChainID     string     `json:"toChainID"`
+	LogIndex      int        `json:"logIndex,omitempty"`
 	SwapTx        string     `json:"swaptx"`
 	SwapHeight    uint64     `json:"swapheight"`
 	SwapTime      uint64     `json:"swaptime"`

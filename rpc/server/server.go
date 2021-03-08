@@ -19,7 +19,12 @@ import (
 
 // StartAPIServer start api server
 func StartAPIServer() {
-	router := initRouter()
+	var router *mux.Router
+	if params.IsVaultSwap() {
+		router = initVaultSwapRouter()
+	} else {
+		router = initRouter()
+	}
 
 	apiPort := params.GetAPIPort()
 	apiServer := params.GetConfig().APIServer
@@ -47,6 +52,22 @@ func StartAPIServer() {
 			log.Error("ListenAndServe error", "err", err)
 		}
 	}()
+}
+
+func initVaultSwapRouter() *mux.Router {
+	r := mux.NewRouter()
+
+	rpcserver := rpc.NewServer()
+	rpcserver.RegisterCodec(rpcjson.NewCodec(), "application/json")
+	_ = rpcserver.RegisterService(new(rpcapi.VaultSwapAPI), "swap")
+
+	r.Handle("/rpc", rpcserver)
+
+	registerHandleFunc(r, "/swap/register/{chainid}/{txid}", restapi.RegisterVaultSwapHandler, "POST")
+	registerHandleFunc(r, "/swap/status/{chainid}/{txid}/{logindex}", restapi.GetVaultSwapHandler, "GET")
+	registerHandleFunc(r, "/swap/history/{chainid}/{address}", restapi.GetVaultSwapHistoryHandler, "GET")
+
+	return r
 }
 
 func initRouter() *mux.Router {

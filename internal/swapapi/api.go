@@ -399,7 +399,7 @@ func RegisterVaultSwap(fromChainID, txid string) (*MapIntResult, error) {
 			ToChainID:     swapInfo.ToChainID.String(),
 			LogIndex:      swapInfo.LogIndex,
 		}
-		err = mongodb.AddSwapout(swap)
+		err = mongodb.AddVaultSwap(swap)
 		if err != nil {
 			log.Warn("[api] add vault swap", "swap", swap, "err", err)
 		} else {
@@ -408,4 +408,27 @@ func RegisterVaultSwap(fromChainID, txid string) (*MapIntResult, error) {
 		result[logIndex] = "success"
 	}
 	return &result, nil
+}
+
+// GetVaultSwap impl
+func GetVaultSwap(fromChainID, txid, logindex string) (*SwapInfo, error) {
+	result, err := mongodb.FindVaultSwapResult(fromChainID, txid, logindex)
+	if err == nil {
+		return ConvertMgoSwapResultToSwapInfo(result), nil
+	}
+	register, err := mongodb.FindVaultSwap(fromChainID, txid, logindex)
+	if err == nil {
+		return ConvertMgoSwapToSwapInfo(register), nil
+	}
+	return nil, mongodb.ErrSwapNotFound
+}
+
+// GetVaultSwapHistory impl
+func GetVaultSwapHistory(fromChainID, address string, offset, limit int) ([]*SwapInfo, error) {
+	limit = processHistoryLimit(limit)
+	result, err := mongodb.FindVaultSwapResults(fromChainID, address, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	return ConvertMgoSwapResultsToSwapInfos(result), nil
 }
