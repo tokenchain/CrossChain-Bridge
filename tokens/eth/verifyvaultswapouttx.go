@@ -24,7 +24,39 @@ var (
 
 // RegisterVaultSwapTx impl
 func (b *Bridge) RegisterVaultSwapTx(txHash string) ([]*tokens.TxSwapInfo, []error) {
-	return nil, nil
+	commonInfo := &tokens.TxSwapInfo{}
+	commonInfo.Hash = txHash // Hash
+
+	txStatus := b.GetTransactionStatus(txHash)
+	if txStatus.BlockHeight == 0 {
+		return []*tokens.TxSwapInfo{commonInfo}, []error{tokens.ErrTxNotFound}
+	}
+
+	commonInfo.Height = txStatus.BlockHeight  // Height
+	commonInfo.Timestamp = txStatus.BlockTime // Timestamp
+
+	receipt, _ := txStatus.Receipt.(*types.RPCTxReceipt)
+	err := b.verifyVaultSwapTxReceipt(commonInfo, receipt)
+	if err != nil {
+		return []*tokens.TxSwapInfo{commonInfo}, []error{err}
+	}
+
+	swapInfos := make([]*tokens.TxSwapInfo, 0)
+	errs := make([]error, 0)
+	for _, rlog := range receipt.Logs {
+		swapInfo := &tokens.TxSwapInfo{}
+		*swapInfo = *commonInfo
+		err := b.verifyVaultSwapTxLog(swapInfo, rlog)
+		if err == nil {
+			err = b.checkVaultSwapInfo(swapInfo)
+		}
+		if tokens.ShouldRegisterSwapForError(err) {
+			swapInfos = append(swapInfos, swapInfo)
+			errs = append(errs, err)
+		}
+	}
+
+	return swapInfos, errs
 }
 
 // VerifyVaultSwapTx impl
@@ -39,19 +71,22 @@ func (b *Bridge) VerifyVaultSwapTx(txHash string, logIndex int, allowUnstable bo
 
 	swapInfo.Height = txStatus.BlockHeight  // Height
 	swapInfo.Timestamp = txStatus.BlockTime // Timestamp
-	receipt, ok := txStatus.Receipt.(*types.RPCTxReceipt)
-	if !ok || receipt == nil {
-		return swapInfo, tokens.ErrTxNotStable
-	}
-	if *receipt.Status != 1 {
-		return swapInfo, tokens.ErrTxWithWrongReceipt
-	}
 
 	if !allowUnstable && txStatus.Confirmations < *b.ChainConfig.Confirmations {
 		return swapInfo, tokens.ErrTxNotStable
 	}
 
-	err := b.verifyVaultSwapTxReceipt(swapInfo, receipt, logIndex)
+	receipt, _ := txStatus.Receipt.(*types.RPCTxReceipt)
+	err := b.verifyVaultSwapTxReceipt(swapInfo, receipt)
+	if err != nil {
+		return swapInfo, err
+	}
+
+	if logIndex >= len(receipt.Logs) {
+		return swapInfo, tokens.ErrTxWithWrongLogIndex
+	}
+
+	err = b.verifyVaultSwapTxLog(swapInfo, receipt.Logs[logIndex])
 	if err != nil {
 		return swapInfo, err
 	}
@@ -90,13 +125,13 @@ func (b *Bridge) checkSwapValue(value *big.Int) bool {
 	return tokens.CheckTokenSwapValue(token, value)
 }
 
-func (b *Bridge) verifyVaultSwapTxReceipt(swapInfo *tokens.TxSwapInfo, receipt *types.RPCTxReceipt, logIndex int) (err error) {
-	if receipt.Recipient == nil {
-		return tokens.ErrTxWithWrongContract
+func (b *Bridge) verifyVaultSwapTxReceipt(swapInfo *tokens.TxSwapInfo, receipt *types.RPCTxReceipt) (err error) {
+	if receipt == nil || *receipt.Status != 1 {
+		return tokens.ErrTxWithWrongReceipt
 	}
 
-	if logIndex >= len(receipt.Logs) {
-		return tokens.ErrTxWithWrongLogIndex
+	if receipt.Recipient == nil {
+		return tokens.ErrTxWithWrongContract
 	}
 
 	vaultContract := b.ChainConfig.VaultContract
@@ -108,8 +143,10 @@ func (b *Bridge) verifyVaultSwapTxReceipt(swapInfo *tokens.TxSwapInfo, receipt *
 	swapInfo.TxTo = txRecipient                            // TxTo
 	swapInfo.To = txRecipient                              // To
 	swapInfo.From = strings.ToLower(receipt.From.String()) // From
+	return nil
+}
 
-	rlog := receipt.Logs[logIndex]
+func (b *Bridge) verifyVaultSwapTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.RPCLog) (err error) {
 	if rlog.Removed != nil && *rlog.Removed {
 		return tokens.ErrTxWithRemovedLog
 	}
@@ -126,7 +163,7 @@ func (b *Bridge) verifyVaultSwapTxReceipt(swapInfo *tokens.TxSwapInfo, receipt *
 		return tokens.ErrSwapoutLogNotFound
 	}
 	if err != nil {
-		log.Debug(b.ChainConfig.BlockChain+" b.verifyVaultSwapTxReceipt fail", "tx", swapInfo.Hash, "logIndex", logIndex, "err", err)
+		log.Debug(b.ChainConfig.BlockChain+" b.verifyVaultSwapTxLog fail", "tx", swapInfo.Hash, "logIndex", rlog.Index, "err", err)
 	}
 	return err
 }

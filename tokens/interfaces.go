@@ -40,11 +40,12 @@ var (
 	ErrSwapoutLogNotFound   = errors.New("swapout log not found or removed")
 	ErrUnknownPairID        = errors.New("unknown pair ID")
 	ErrBindAddressMismatch  = errors.New("bind address mismatch")
+	ErrTxWithoutReceipt     = errors.New("tx without receipt")
+	ErrTxWithWrongReceipt   = errors.New("tx with wrong receipt")
 
 	// errors should register
 	ErrTxWithWrongMemo       = errors.New("tx with wrong memo")
 	ErrTxWithWrongValue      = errors.New("tx with wrong value")
-	ErrTxWithWrongReceipt    = errors.New("tx with wrong receipt")
 	ErrTxWithWrongSender     = errors.New("tx with wrong sender")
 	ErrTxSenderNotRegistered = errors.New("tx sender not registered")
 	ErrTxIncompatible        = errors.New("tx incompatible")
@@ -58,7 +59,6 @@ func ShouldRegisterSwapForError(err error) bool {
 	case nil,
 		ErrTxWithWrongMemo,
 		ErrTxWithWrongValue,
-		ErrTxWithWrongReceipt,
 		ErrTxWithWrongSender,
 		ErrTxSenderNotRegistered,
 		ErrTxIncompatible,
