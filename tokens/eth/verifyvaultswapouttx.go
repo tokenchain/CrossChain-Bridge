@@ -43,9 +43,10 @@ func (b *Bridge) RegisterVaultSwapTx(txHash string) ([]*tokens.TxSwapInfo, []err
 
 	swapInfos := make([]*tokens.TxSwapInfo, 0)
 	errs := make([]error, 0)
-	for _, rlog := range receipt.Logs {
+	for i, rlog := range receipt.Logs {
 		swapInfo := &tokens.TxSwapInfo{}
 		*swapInfo = *commonInfo
+		swapInfo.LogIndex = i // LogIndex
 		err := b.verifyVaultSwapTxLog(swapInfo, rlog)
 		if err == nil {
 			err = b.checkVaultSwapInfo(swapInfo)
@@ -62,7 +63,8 @@ func (b *Bridge) RegisterVaultSwapTx(txHash string) ([]*tokens.TxSwapInfo, []err
 // VerifyVaultSwapTx impl
 func (b *Bridge) VerifyVaultSwapTx(txHash string, logIndex int, allowUnstable bool) (*tokens.TxSwapInfo, error) {
 	swapInfo := &tokens.TxSwapInfo{}
-	swapInfo.Hash = txHash // Hash
+	swapInfo.Hash = txHash       // Hash
+	swapInfo.LogIndex = logIndex // LogIndex
 
 	txStatus := b.GetTransactionStatus(txHash)
 	if txStatus.BlockHeight == 0 {
@@ -111,7 +113,7 @@ func (b *Bridge) checkVaultSwapInfo(swapInfo *tokens.TxSwapInfo) error {
 	if !b.checkSwapValue(swapInfo.Value) {
 		return tokens.ErrTxWithWrongValue
 	}
-	dstBridge := tokens.GetCrossChainBridgeByChainID(swapInfo.ToChainID)
+	dstBridge := tokens.GetCrossChainBridgeByChainID(swapInfo.ToChainID.String())
 	if !dstBridge.IsValidAddress(swapInfo.Bind) {
 		log.Debug("wrong bind address in vault swap", "txid", swapInfo.Hash, "logIndex", swapInfo.LogIndex, "bind", swapInfo.Bind)
 		return tokens.ErrTxWithWrongMemo

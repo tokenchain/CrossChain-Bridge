@@ -104,7 +104,7 @@ func processSwapVerify(swap *mongodb.MgoSwap, isSwapin bool) (err error) {
 	pairID := swap.PairID
 	txid := swap.TxID
 	bind := swap.Bind
-	bridge := tokens.GetCrossChainBridge(isSwapin)
+	bridge := tokens.GetBridge(swap.FromChainID, isSwapin)
 
 	swapInfo, err := verifySwapTransaction(bridge, pairID, txid, bind, tokens.SwapTxType(swap.TxType), swap.LogIndex)
 	if swapInfo == nil {

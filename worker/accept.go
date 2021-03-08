@@ -123,8 +123,8 @@ func verifySignInfo(signInfo *dcrm.SignInfoData) error {
 
 func getSrcAndDestBridge(args *tokens.BuildTxArgs) (srcBridge, dstBridge tokens.CrossChainBridge, err error) {
 	if params.IsVaultSwap() {
-		srcBridge = tokens.GetCrossChainBridgeByChainID(args.FromChainID)
-		dstBridge = tokens.GetCrossChainBridgeByChainID(args.ToChainID)
+		srcBridge = tokens.GetCrossChainBridgeByChainID(args.FromChainID.String())
+		dstBridge = tokens.GetCrossChainBridgeByChainID(args.ToChainID.String())
 		if srcBridge == nil || dstBridge == nil {
 			if srcBridge == nil {
 				logWorkerTrace("accept", "no bridge for chain id", "chainID", args.FromChainID)

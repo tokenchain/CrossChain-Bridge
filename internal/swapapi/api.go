@@ -362,7 +362,7 @@ func RegisterVaultSwap(fromChainID, txid string) (*MapIntResult, error) {
 	if err != nil {
 		return nil, newRPCInternalError(err)
 	}
-	bridge := tokens.GetCrossChainBridgeByChainID(chainID)
+	bridge := tokens.GetCrossChainBridgeByChainID(chainID.String())
 	vaultSwapper, ok := bridge.(tokens.VaultSwapper)
 	if !ok {
 		return nil, tokens.ErrVaultSwapNotSupport
