@@ -58,7 +58,7 @@ func addInitialSwapResult(swapInfo *tokens.TxSwapInfo, status mongodb.SwapStatus
 	return err
 }
 
-func updateSwapResult(fromChainID, txid string, logIndex int, mtx *MatchTx) (err error) {
+func updateRouterSwapResult(fromChainID, txid string, logIndex int, mtx *MatchTx) (err error) {
 	updates := &mongodb.SwapResultUpdateItems{
 		Status:    mongodb.MatchTxNotStable,
 		Timestamp: now(),
@@ -77,24 +77,19 @@ func updateSwapResult(fromChainID, txid string, logIndex int, mtx *MatchTx) (err
 			updates.SwapTx = mtx.SwapTx
 		}
 	}
-	switch mtx.SwapType {
-	case tokens.RouterSwapType:
-		err = mongodb.UpdateRouterSwapResult(fromChainID, txid, logIndex, updates)
-	default:
-		err = tokens.ErrUnknownSwapType
-	}
+	err = mongodb.UpdateRouterSwapResult(fromChainID, txid, logIndex, updates)
 	if err != nil {
 		logWorkerError("update", "updateSwapResult failed", err,
 			"chainid", fromChainID, "txid", txid, "logIndex", logIndex,
 			"swaptx", mtx.SwapTx, "swapheight", mtx.SwapHeight,
 			"swaptime", mtx.SwapTime, "swapvalue", mtx.SwapValue,
-			"swaptype", mtx.SwapType, "swapnonce", mtx.SwapNonce)
+			"swapnonce", mtx.SwapNonce)
 	} else {
 		logWorker("update", "updateSwapResult success",
 			"chainid", fromChainID, "txid", txid, "logIndex", logIndex,
 			"swaptx", mtx.SwapTx, "swapheight", mtx.SwapHeight,
 			"swaptime", mtx.SwapTime, "swapvalue", mtx.SwapValue,
-			"swaptype", mtx.SwapType, "swapnonce", mtx.SwapNonce)
+			"swapnonce", mtx.SwapNonce)
 	}
 	return err
 }
