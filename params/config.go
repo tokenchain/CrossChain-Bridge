@@ -15,7 +15,7 @@ const (
 	defaultAPIPort      = 11556
 	defServerConfigFile = "config.toml"
 
-	vaultSwapIdentifier = "vaultswap"
+	routerSwapIdentifier = "routerswap"
 )
 
 var (
@@ -169,7 +169,7 @@ func IsAdmin(account string) bool {
 	return false
 }
 
-// IsVaultSwap is vault swap
-func IsVaultSwap() bool {
-	return strings.EqualFold(GetIdentifier(), vaultSwapIdentifier)
+// IsRouterSwap is router swap
+func IsRouterSwap() bool {
+	return strings.EqualFold(GetIdentifier(), routerSwapIdentifier)
 }

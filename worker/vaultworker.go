@@ -4,8 +4,8 @@ import (
 	"time"
 )
 
-// StartVaultSwapWork start vault swap job
-func StartVaultSwapWork(isServer bool) {
+// StartRouterSwapWork start router swap job
+func StartRouterSwapWork(isServer bool) {
 	if !isServer {
 		go StartAcceptSignJob()
 		return

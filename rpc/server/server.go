@@ -20,8 +20,8 @@ import (
 // StartAPIServer start api server
 func StartAPIServer() {
 	var router *mux.Router
-	if params.IsVaultSwap() {
-		router = initVaultSwapRouter()
+	if params.IsRouterSwap() {
+		router = initRouterSwapRouter()
 	} else {
 		router = initRouter()
 	}
@@ -54,18 +54,18 @@ func StartAPIServer() {
 	}()
 }
 
-func initVaultSwapRouter() *mux.Router {
+func initRouterSwapRouter() *mux.Router {
 	r := mux.NewRouter()
 
 	rpcserver := rpc.NewServer()
 	rpcserver.RegisterCodec(rpcjson.NewCodec(), "application/json")
-	_ = rpcserver.RegisterService(new(rpcapi.VaultSwapAPI), "swap")
+	_ = rpcserver.RegisterService(new(rpcapi.RouterSwapAPI), "swap")
 
 	r.Handle("/rpc", rpcserver)
 
-	registerHandleFunc(r, "/swap/register/{chainid}/{txid}", restapi.RegisterVaultSwapHandler, "POST")
-	registerHandleFunc(r, "/swap/status/{chainid}/{txid}/{logindex}", restapi.GetVaultSwapHandler, "GET")
-	registerHandleFunc(r, "/swap/history/{chainid}/{address}", restapi.GetVaultSwapHistoryHandler, "GET")
+	registerHandleFunc(r, "/swap/register/{chainid}/{txid}", restapi.RegisterRouterSwapHandler, "POST")
+	registerHandleFunc(r, "/swap/status/{chainid}/{txid}/{logindex}", restapi.GetRouterSwapHandler, "GET")
+	registerHandleFunc(r, "/swap/history/{chainid}/{address}", restapi.GetRouterSwapHistoryHandler, "GET")
 
 	return r
 }
@@ -103,7 +103,7 @@ func initRouter() *mux.Router {
 	registerHandleFunc(r, "/registered/{address}", restapi.GetRegisteredAddress, "GET")
 	registerHandleFunc(r, "/register/{address}", restapi.RegisterAddress, "POST")
 
-	registerHandleFunc(r, "/swap/register/{chainid}/{txid}", restapi.RegisterVaultSwapHandler, "POST")
+	registerHandleFunc(r, "/swap/register/{chainid}/{txid}", restapi.RegisterRouterSwapHandler, "POST")
 
 	return r
 }

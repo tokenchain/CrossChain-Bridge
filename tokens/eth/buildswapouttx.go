@@ -11,7 +11,7 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 )
 
-// vault contract's func hashs
+// router contract's func hashs
 var (
 	defSwapDeadlineOffset = int64(36000)
 
@@ -26,16 +26,16 @@ var (
 )
 
 func (b *Bridge) buildSwapoutTxInput(args *tokens.BuildTxArgs, tokenCfg *tokens.TokenConfig) (err error) {
-	isVaultSwap := params.IsVaultSwap() || b.ChainConfig.VaultContract != ""
-	if !isVaultSwap && !b.IsSrc {
+	isRouterSwap := params.IsRouterSwap() || b.ChainConfig.RouterContract != ""
+	if !isRouterSwap && !b.IsSrc {
 		return tokens.ErrBuildSwapTxInWrongEndpoint
 	}
 	switch {
-	case isVaultSwap:
+	case isRouterSwap:
 		if len(args.Path) > 0 && args.AmountOutMin != nil {
-			return b.buildVaultSwapoutTradeTxInput(args)
+			return b.buildRouterSwapoutTradeTxInput(args)
 		}
-		return b.buildVaultSwapoutTxInput(args)
+		return b.buildRouterSwapoutTxInput(args)
 	case tokenCfg.IsErc20():
 		return b.buildErc20SwapoutTxInput(args)
 	default:
@@ -60,7 +60,7 @@ func (b *Bridge) buildErc20SwapoutTxInput(args *tokens.BuildTxArgs) (err error) 
 	return b.checkBalance(token.ContractAddress, token.DcrmAddress, amount)
 }
 
-func (b *Bridge) buildVaultSwapoutTxInput(args *tokens.BuildTxArgs) (err error) {
+func (b *Bridge) buildRouterSwapoutTxInput(args *tokens.BuildTxArgs) (err error) {
 	token, receiver, amount, err := b.checkSwapoutReceiverAndAmount(args)
 	if err != nil {
 		return err
@@ -74,13 +74,13 @@ func (b *Bridge) buildVaultSwapoutTxInput(args *tokens.BuildTxArgs) (err error) 
 	}
 
 	input := PackDataWithFuncHash(funcHash, args.Token, receiver, amount, args.FromChainID)
-	args.Input = &input                   // input
-	args.To = b.ChainConfig.VaultContract // to
+	args.Input = &input                    // input
+	args.To = b.ChainConfig.RouterContract // to
 
 	return b.checkBalance(token.ContractAddress, token.DcrmAddress, amount)
 }
 
-func (b *Bridge) buildVaultSwapoutTradeTxInput(args *tokens.BuildTxArgs) (err error) {
+func (b *Bridge) buildRouterSwapoutTradeTxInput(args *tokens.BuildTxArgs) (err error) {
 	token, receiver, amount, err := b.checkSwapoutReceiverAndAmount(args)
 	if err != nil {
 		return err
@@ -100,8 +100,8 @@ func (b *Bridge) buildVaultSwapoutTradeTxInput(args *tokens.BuildTxArgs) (err er
 	deadline := time.Now().Unix() + swapDeadlineOffset
 
 	input := PackDataWithFuncHash(funcHash, args.SwapID, amount, args.AmountOutMin, toAddresses(args.Path), receiver, deadline, args.FromChainID)
-	args.Input = &input                   // input
-	args.To = b.ChainConfig.VaultContract // to
+	args.Input = &input                    // input
+	args.To = b.ChainConfig.RouterContract // to
 
 	return b.checkBalance(token.ContractAddress, token.DcrmAddress, amount)
 }

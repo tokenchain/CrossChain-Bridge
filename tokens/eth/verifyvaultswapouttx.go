@@ -12,7 +12,7 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/types"
 )
 
-// vault contract's log topics
+// router contract's log topics
 var (
 	// LogAnySwapOut(address token, address from, address to, uint amount, uint fromChainID, uint toChainID);
 	LogAnySwapOutTopic = common.FromHex("0x97116cf6cd4f6412bb47914d6db18da9e16ab2142f543b86e207c24fbd16b23a")
@@ -22,8 +22,8 @@ var (
 	LogAnySwapTradeTokensForNativeTopic = common.FromHex("0x278277e0209c347189add7bd92411973b5f6b8644f7ac62ea1be984ce993f8f4")
 )
 
-// RegisterVaultSwapTx impl
-func (b *Bridge) RegisterVaultSwapTx(txHash string) ([]*tokens.TxSwapInfo, []error) {
+// RegisterRouterSwapTx impl
+func (b *Bridge) RegisterRouterSwapTx(txHash string) ([]*tokens.TxSwapInfo, []error) {
 	commonInfo := &tokens.TxSwapInfo{}
 	commonInfo.Hash = txHash // Hash
 
@@ -36,7 +36,7 @@ func (b *Bridge) RegisterVaultSwapTx(txHash string) ([]*tokens.TxSwapInfo, []err
 	commonInfo.Timestamp = txStatus.BlockTime // Timestamp
 
 	receipt, _ := txStatus.Receipt.(*types.RPCTxReceipt)
-	err := b.verifyVaultSwapTxReceipt(commonInfo, receipt)
+	err := b.verifyRouterSwapTxReceipt(commonInfo, receipt)
 	if err != nil {
 		return []*tokens.TxSwapInfo{commonInfo}, []error{err}
 	}
@@ -47,9 +47,9 @@ func (b *Bridge) RegisterVaultSwapTx(txHash string) ([]*tokens.TxSwapInfo, []err
 		swapInfo := &tokens.TxSwapInfo{}
 		*swapInfo = *commonInfo
 		swapInfo.LogIndex = i // LogIndex
-		err := b.verifyVaultSwapTxLog(swapInfo, rlog)
+		err := b.verifyRouterSwapTxLog(swapInfo, rlog)
 		if err == nil {
-			err = b.checkVaultSwapInfo(swapInfo)
+			err = b.checkRouterSwapInfo(swapInfo)
 		}
 		if tokens.ShouldRegisterSwapForError(err) {
 			swapInfos = append(swapInfos, swapInfo)
@@ -60,8 +60,8 @@ func (b *Bridge) RegisterVaultSwapTx(txHash string) ([]*tokens.TxSwapInfo, []err
 	return swapInfos, errs
 }
 
-// VerifyVaultSwapTx impl
-func (b *Bridge) VerifyVaultSwapTx(txHash string, logIndex int, allowUnstable bool) (*tokens.TxSwapInfo, error) {
+// VerifyRouterSwapTx impl
+func (b *Bridge) VerifyRouterSwapTx(txHash string, logIndex int, allowUnstable bool) (*tokens.TxSwapInfo, error) {
 	swapInfo := &tokens.TxSwapInfo{}
 	swapInfo.Hash = txHash       // Hash
 	swapInfo.LogIndex = logIndex // LogIndex
@@ -79,7 +79,7 @@ func (b *Bridge) VerifyVaultSwapTx(txHash string, logIndex int, allowUnstable bo
 	}
 
 	receipt, _ := txStatus.Receipt.(*types.RPCTxReceipt)
-	err := b.verifyVaultSwapTxReceipt(swapInfo, receipt)
+	err := b.verifyRouterSwapTxReceipt(swapInfo, receipt)
 	if err != nil {
 		return swapInfo, err
 	}
@@ -88,18 +88,18 @@ func (b *Bridge) VerifyVaultSwapTx(txHash string, logIndex int, allowUnstable bo
 		return swapInfo, tokens.ErrTxWithWrongLogIndex
 	}
 
-	err = b.verifyVaultSwapTxLog(swapInfo, receipt.Logs[logIndex])
+	err = b.verifyRouterSwapTxLog(swapInfo, receipt.Logs[logIndex])
 	if err != nil {
 		return swapInfo, err
 	}
 
-	err = b.checkVaultSwapInfo(swapInfo)
+	err = b.checkRouterSwapInfo(swapInfo)
 	if err != nil {
 		return swapInfo, err
 	}
 
 	if !allowUnstable {
-		log.Debug("verify vault swap tx stable pass",
+		log.Debug("verify router swap tx stable pass",
 			"from", swapInfo.From, "to", swapInfo.To, "bind", swapInfo.Bind, "value", swapInfo.Value,
 			"txid", txHash, "logIndex", logIndex, "height", swapInfo.Height, "timestamp", swapInfo.Timestamp,
 			"fromChainID", swapInfo.FromChainID, "toChainID", swapInfo.ToChainID,
@@ -109,13 +109,13 @@ func (b *Bridge) VerifyVaultSwapTx(txHash string, logIndex int, allowUnstable bo
 	return swapInfo, nil
 }
 
-func (b *Bridge) checkVaultSwapInfo(swapInfo *tokens.TxSwapInfo) error {
+func (b *Bridge) checkRouterSwapInfo(swapInfo *tokens.TxSwapInfo) error {
 	if !b.checkSwapValue(swapInfo.Value) {
 		return tokens.ErrTxWithWrongValue
 	}
 	dstBridge := tokens.GetCrossChainBridgeByChainID(swapInfo.ToChainID.String())
 	if !dstBridge.IsValidAddress(swapInfo.Bind) {
-		log.Debug("wrong bind address in vault swap", "txid", swapInfo.Hash, "logIndex", swapInfo.LogIndex, "bind", swapInfo.Bind)
+		log.Debug("wrong bind address in router swap", "txid", swapInfo.Hash, "logIndex", swapInfo.LogIndex, "bind", swapInfo.Bind)
 		return tokens.ErrTxWithWrongMemo
 	}
 	return nil
@@ -127,7 +127,7 @@ func (b *Bridge) checkSwapValue(value *big.Int) bool {
 	return tokens.CheckTokenSwapValue(token, value)
 }
 
-func (b *Bridge) verifyVaultSwapTxReceipt(swapInfo *tokens.TxSwapInfo, receipt *types.RPCTxReceipt) (err error) {
+func (b *Bridge) verifyRouterSwapTxReceipt(swapInfo *tokens.TxSwapInfo, receipt *types.RPCTxReceipt) (err error) {
 	if receipt == nil || *receipt.Status != 1 {
 		return tokens.ErrTxWithWrongReceipt
 	}
@@ -136,9 +136,9 @@ func (b *Bridge) verifyVaultSwapTxReceipt(swapInfo *tokens.TxSwapInfo, receipt *
 		return tokens.ErrTxWithWrongContract
 	}
 
-	vaultContract := b.ChainConfig.VaultContract
+	routerContract := b.ChainConfig.RouterContract
 	txRecipient := strings.ToLower(receipt.Recipient.String())
-	if !common.IsEqualIgnoreCase(txRecipient, vaultContract) {
+	if !common.IsEqualIgnoreCase(txRecipient, routerContract) {
 		return tokens.ErrTxWithWrongContract
 	}
 
@@ -148,7 +148,7 @@ func (b *Bridge) verifyVaultSwapTxReceipt(swapInfo *tokens.TxSwapInfo, receipt *
 	return nil
 }
 
-func (b *Bridge) verifyVaultSwapTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.RPCLog) (err error) {
+func (b *Bridge) verifyRouterSwapTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.RPCLog) (err error) {
 	if rlog.Removed != nil && *rlog.Removed {
 		return tokens.ErrTxWithRemovedLog
 	}
@@ -156,21 +156,21 @@ func (b *Bridge) verifyVaultSwapTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.R
 	logTopic := rlog.Topics[0].Bytes()
 	switch {
 	case bytes.Equal(logTopic, LogAnySwapOutTopic):
-		err = b.parseVaultSwapoutTxLog(swapInfo, rlog)
+		err = b.parseRouterSwapoutTxLog(swapInfo, rlog)
 	case bytes.Equal(logTopic, LogAnySwapTradeTokensForTokensTopic):
-		err = b.parseVaultSwapTradeTxLog(swapInfo, rlog, false)
+		err = b.parseRouterSwapTradeTxLog(swapInfo, rlog, false)
 	case bytes.Equal(logTopic, LogAnySwapTradeTokensForNativeTopic):
-		err = b.parseVaultSwapTradeTxLog(swapInfo, rlog, true)
+		err = b.parseRouterSwapTradeTxLog(swapInfo, rlog, true)
 	default:
 		return tokens.ErrSwapoutLogNotFound
 	}
 	if err != nil {
-		log.Debug(b.ChainConfig.BlockChain+" b.verifyVaultSwapTxLog fail", "tx", swapInfo.Hash, "logIndex", rlog.Index, "err", err)
+		log.Debug(b.ChainConfig.BlockChain+" b.verifyRouterSwapTxLog fail", "tx", swapInfo.Hash, "logIndex", rlog.Index, "err", err)
 	}
 	return err
 }
 
-func (b *Bridge) parseVaultSwapoutTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.RPCLog) error {
+func (b *Bridge) parseRouterSwapoutTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.RPCLog) error {
 	logTopics := rlog.Topics
 	if len(logTopics) != 4 {
 		return tokens.ErrTxWithWrongTopics
@@ -189,7 +189,7 @@ func (b *Bridge) parseVaultSwapoutTxLog(swapInfo *tokens.TxSwapInfo, rlog *types
 	return nil
 }
 
-func (b *Bridge) parseVaultSwapTradeTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.RPCLog, forNative bool) error {
+func (b *Bridge) parseRouterSwapTradeTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.RPCLog, forNative bool) error {
 	logTopics := rlog.Topics
 	if len(logTopics) != 3 {
 		return tokens.ErrTxWithWrongTopics

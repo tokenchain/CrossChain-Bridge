@@ -182,12 +182,12 @@ func verifySwapTransaction(
 	swapTxType tokens.SwapTxType,
 	logIndex int) (swapInfo *tokens.TxSwapInfo, err error) {
 	switch swapTxType {
-	case tokens.VaultSwapTx:
-		vaultSwapper, ok := bridge.(tokens.VaultSwapper)
+	case tokens.RouterSwapTx:
+		routerSwapper, ok := bridge.(tokens.RouterSwapper)
 		if !ok {
-			return nil, tokens.ErrVaultSwapNotSupport
+			return nil, tokens.ErrRouterSwapNotSupport
 		}
-		swapInfo, err = vaultSwapper.VerifyVaultSwapTx(txid, logIndex, false)
+		swapInfo, err = routerSwapper.VerifyRouterSwapTx(txid, logIndex, false)
 	case tokens.P2shSwapinTx:
 		if btc.BridgeInstance == nil {
 			return nil, tokens.ErrNoBtcBridge

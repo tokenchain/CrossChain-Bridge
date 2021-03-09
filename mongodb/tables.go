@@ -11,8 +11,8 @@ const (
 	tbRegisteredAddress string = "RegisteredAddress"
 	tbBlacklist         string = "Blacklist"
 
-	tbVaultSwaps       string = "VaultSwaps"
-	tbVaultSwapResults string = "VaultSwapResults"
+	tbRouterSwaps       string = "RouterSwaps"
+	tbRouterSwapResults string = "RouterSwapResults"
 
 	keyOfSrcLatestScanInfo string = "srclatest"
 	keyOfDstLatestScanInfo string = "dstlatest"
@@ -20,7 +20,7 @@ const (
 
 // MgoSwap registered swap
 type MgoSwap struct {
-	Key       string     `bson:"_id"` // txid + pairid + bind (vault: txid + logIndex + fromChainID)
+	Key       string     `bson:"_id"` // txid + pairid + bind (router: txid + logIndex + fromChainID)
 	PairID    string     `bson:"pairid"`
 	TxID      string     `bson:"txid"`
 	TxTo      string     `bson:"txto"`
@@ -42,7 +42,7 @@ type MgoSwap struct {
 
 // MgoSwapResult swap result (verified swap)
 type MgoSwapResult struct {
-	Key        string     `bson:"_id"` // txid + pairid + bind (vault: txid + logIndex + fromChainID)
+	Key        string     `bson:"_id"` // txid + pairid + bind (router: txid + logIndex + fromChainID)
 	PairID     string     `bson:"pairid"`
 	TxID       string     `bson:"txid"`
 	TxTo       string     `bson:"txto"`

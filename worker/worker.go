@@ -17,8 +17,8 @@ func StartWork(isServer bool) {
 	client.InitHTTPClient()
 	bridge.InitCrossChainBridge(isServer)
 
-	if params.IsVaultSwap() {
-		StartVaultSwapWork(isServer)
+	if params.IsRouterSwap() {
+		StartRouterSwapWork(isServer)
 		return
 	}
 

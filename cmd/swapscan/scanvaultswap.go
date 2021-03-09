@@ -23,21 +23,21 @@ import (
 )
 
 var (
-	vaultAddressFlag = &cli.StringFlag{
-		Name:  "vaultAddress",
-		Usage: "vault address",
+	routerAddressFlag = &cli.StringFlag{
+		Name:  "routerAddress",
+		Usage: "router address",
 	}
 
-	scanVaultSwapCommand = &cli.Command{
-		Action:    scanVaultSwap,
-		Name:      "scanVaultSwap",
-		Usage:     "scan vault swap on eth like chain",
+	scanRouterSwapCommand = &cli.Command{
+		Action:    scanRouterSwap,
+		Name:      "scanRouterSwap",
+		Usage:     "scan router swap on eth like chain",
 		ArgsUsage: " ",
 		Description: `
-scan vault swap on eth like chain
+scan router swap on eth like chain
 `,
 		Flags: []cli.Flag{
-			vaultAddressFlag,
+			routerAddressFlag,
 			utils.GatewayFlag,
 			utils.SwapServerFlag,
 			utils.StartHeightFlag,
@@ -47,22 +47,22 @@ scan vault swap on eth like chain
 		},
 	}
 
-	vaultSwapScannedBlocks = &cachedSacnnedBlocks{
+	routerSwapScannedBlocks = &cachedSacnnedBlocks{
 		capacity:  100,
 		nextIndex: 0,
 		hashes:    make([]string, 100),
 	}
 )
 
-type vaultSwapScanner struct {
-	chainID      string
-	vaultAddress string
-	gateway      string
-	swapServer   string
-	startHeight  uint64
-	endHeight    uint64
-	stableHeight uint64
-	jobCount     uint64
+type routerSwapScanner struct {
+	chainID       string
+	routerAddress string
+	gateway       string
+	swapServer    string
+	startHeight   uint64
+	endHeight     uint64
+	stableHeight  uint64
+	jobCount      uint64
 
 	client *ethclient.Client
 	ctx    context.Context
@@ -71,14 +71,14 @@ type vaultSwapScanner struct {
 	rpcRetryCount int
 }
 
-func scanVaultSwap(ctx *cli.Context) error {
+func scanRouterSwap(ctx *cli.Context) error {
 	utils.SetLogger(ctx)
-	scanner := &vaultSwapScanner{
+	scanner := &routerSwapScanner{
 		ctx:           context.Background(),
 		rpcInterval:   3 * time.Second,
 		rpcRetryCount: 3,
 	}
-	scanner.vaultAddress = ctx.String(vaultAddressFlag.Name)
+	scanner.routerAddress = ctx.String(routerAddressFlag.Name)
 	scanner.gateway = ctx.String(utils.GatewayFlag.Name)
 	scanner.swapServer = ctx.String(utils.SwapServerFlag.Name)
 	scanner.startHeight = ctx.Uint64(utils.StartHeightFlag.Name)
@@ -87,7 +87,7 @@ func scanVaultSwap(ctx *cli.Context) error {
 	scanner.jobCount = ctx.Uint64(utils.JobsFlag.Name)
 
 	log.Info("get argument success",
-		"vaultAddress", scanner.vaultAddress,
+		"routerAddress", scanner.routerAddress,
 		"gateway", scanner.gateway,
 		"swapServer", scanner.swapServer,
 		"start", scanner.startHeight,
@@ -102,9 +102,9 @@ func scanVaultSwap(ctx *cli.Context) error {
 	return nil
 }
 
-func (scanner *vaultSwapScanner) verifyOptions() {
-	if !common.IsHexAddress(scanner.vaultAddress) {
-		log.Fatalf("invalid vault address '%v'", scanner.vaultAddress)
+func (scanner *routerSwapScanner) verifyOptions() {
+	if !common.IsHexAddress(scanner.routerAddress) {
+		log.Fatalf("invalid router address '%v'", scanner.routerAddress)
 	}
 	if scanner.gateway == "" {
 		log.Fatal("must specify gateway address")
@@ -120,7 +120,7 @@ func (scanner *vaultSwapScanner) verifyOptions() {
 	}
 }
 
-func (scanner *vaultSwapScanner) init() {
+func (scanner *routerSwapScanner) init() {
 	ethcli, err := ethclient.Dial(scanner.gateway)
 	if err != nil {
 		log.Fatal("ethclient.Dail failed", "gateway", scanner.gateway, "err", err)
@@ -149,7 +149,7 @@ func (scanner *vaultSwapScanner) init() {
 	}
 }
 
-func (scanner *vaultSwapScanner) run() {
+func (scanner *routerSwapScanner) run() {
 	start := scanner.startHeight
 	wend := scanner.endHeight
 	if wend == 0 {
@@ -167,7 +167,7 @@ func (scanner *vaultSwapScanner) run() {
 }
 
 // nolint:dupl // in diff sub command
-func (scanner *vaultSwapScanner) doScanRangeJob(start, end uint64) {
+func (scanner *routerSwapScanner) doScanRangeJob(start, end uint64) {
 	if start >= end {
 		return
 	}
@@ -193,7 +193,7 @@ func (scanner *vaultSwapScanner) doScanRangeJob(start, end uint64) {
 	}
 }
 
-func (scanner *vaultSwapScanner) scanRange(job, from, to uint64, wg *sync.WaitGroup) {
+func (scanner *routerSwapScanner) scanRange(job, from, to uint64, wg *sync.WaitGroup) {
 	defer wg.Done()
 	log.Info(fmt.Sprintf("[%v] start scan range", job), "from", from, "to", to)
 
@@ -204,7 +204,7 @@ func (scanner *vaultSwapScanner) scanRange(job, from, to uint64, wg *sync.WaitGr
 	log.Info(fmt.Sprintf("[%v] scan range finish", job), "from", from, "to", to)
 }
 
-func (scanner *vaultSwapScanner) scanLoop(from uint64) {
+func (scanner *routerSwapScanner) scanLoop(from uint64) {
 	stable := scanner.stableHeight
 	log.Info("start scan loop", "from", from, "stable", stable)
 	for {
@@ -219,7 +219,7 @@ func (scanner *vaultSwapScanner) scanLoop(from uint64) {
 	}
 }
 
-func (scanner *vaultSwapScanner) loopGetLatestBlockNumber() uint64 {
+func (scanner *routerSwapScanner) loopGetLatestBlockNumber() uint64 {
 	for {
 		header, err := scanner.client.HeaderByNumber(scanner.ctx, nil)
 		if err == nil {
@@ -231,7 +231,7 @@ func (scanner *vaultSwapScanner) loopGetLatestBlockNumber() uint64 {
 	}
 }
 
-func (scanner *vaultSwapScanner) loopGetBlock(height uint64) *types.Block {
+func (scanner *routerSwapScanner) loopGetBlock(height uint64) *types.Block {
 	blockNumber := new(big.Int).SetUint64(height)
 	for {
 		block, err := scanner.client.BlockByNumber(scanner.ctx, blockNumber)
@@ -243,10 +243,10 @@ func (scanner *vaultSwapScanner) loopGetBlock(height uint64) *types.Block {
 	}
 }
 
-func (scanner *vaultSwapScanner) scanBlock(job, height uint64, cache bool) {
+func (scanner *routerSwapScanner) scanBlock(job, height uint64, cache bool) {
 	block := scanner.loopGetBlock(height)
 	blockHash := block.Hash().String()
-	if cache && vaultSwapScannedBlocks.isScanned(blockHash) {
+	if cache && routerSwapScannedBlocks.isScanned(blockHash) {
 		return
 	}
 	log.Info(fmt.Sprintf("[%v] scan block %v", job, height), "hash", blockHash, "txs", len(block.Transactions()))
@@ -254,12 +254,12 @@ func (scanner *vaultSwapScanner) scanBlock(job, height uint64, cache bool) {
 		scanner.scanTransaction(tx)
 	}
 	if cache {
-		vaultSwapScannedBlocks.addBlock(blockHash)
+		routerSwapScannedBlocks.addBlock(blockHash)
 	}
 }
 
-func (scanner *vaultSwapScanner) scanTransaction(tx *types.Transaction) {
-	if tx.To() == nil || !strings.EqualFold(tx.To().String(), scanner.vaultAddress) {
+func (scanner *routerSwapScanner) scanTransaction(tx *types.Transaction) {
+	if tx.To() == nil || !strings.EqualFold(tx.To().String(), scanner.routerAddress) {
 		return
 	}
 
@@ -285,9 +285,9 @@ func (scanner *vaultSwapScanner) scanTransaction(tx *types.Transaction) {
 	}
 }
 
-func (scanner *vaultSwapScanner) postSwap(chainID, txid string, logIndex int) {
-	subject := "post vault swap register"
-	rpcMethod := "swap.VaultSwap"
+func (scanner *routerSwapScanner) postSwap(chainID, txid string, logIndex int) {
+	subject := "post router swap register"
+	rpcMethod := "swap.RouterSwap"
 	log.Info(subject, "chainid", chainID, "txid", txid, "logindex", logIndex)
 
 	var result interface{}

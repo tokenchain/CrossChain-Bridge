@@ -16,8 +16,8 @@ var (
 	collRegisteredAddress *mgo.Collection
 	collBlacklist         *mgo.Collection
 
-	collVaultSwap       *mgo.Collection
-	collVaultSwapResult *mgo.Collection
+	collRouterSwap       *mgo.Collection
+	collRouterSwapResult *mgo.Collection
 )
 
 func isSwapin(collection *mgo.Collection) bool {
@@ -26,9 +26,9 @@ func isSwapin(collection *mgo.Collection) bool {
 
 // do this when reconnect to the database
 func deinintCollections() {
-	if params.IsVaultSwap() {
-		collVaultSwap = database.C(tbVaultSwaps)
-		collVaultSwapResult = database.C(tbVaultSwapResults)
+	if params.IsRouterSwap() {
+		collRouterSwap = database.C(tbRouterSwaps)
+		collRouterSwapResult = database.C(tbRouterSwapResults)
 	} else {
 		collSwapin = database.C(tbSwapins)
 		collSwapout = database.C(tbSwapouts)
@@ -43,9 +43,9 @@ func deinintCollections() {
 }
 
 func initCollections() {
-	if params.IsVaultSwap() {
-		initCollection(tbVaultSwaps, &collVaultSwap, "fromChainID", "timestamp", "status")
-		initCollection(tbVaultSwapResults, &collVaultSwapResult, "fromChainID", "from", "timestamp")
+	if params.IsRouterSwap() {
+		initCollection(tbRouterSwaps, &collRouterSwap, "fromChainID", "timestamp", "status")
+		initCollection(tbRouterSwapResults, &collRouterSwapResult, "fromChainID", "from", "timestamp")
 	} else {
 		initCollection(tbSwapins, &collSwapin, "timestamp", "status")
 		initCollection(tbSwapouts, &collSwapout, "timestamp", "status")

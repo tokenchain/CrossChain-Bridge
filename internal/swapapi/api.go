@@ -352,23 +352,23 @@ func GetRegisteredAddress(address string) (*RegisteredAddress, error) {
 	return mongodb.FindRegisteredAddress(address)
 }
 
-// RegisterVaultSwap register vault swap
-func RegisterVaultSwap(fromChainID, txid string) (*MapIntResult, error) {
-	log.Debug("[api] receive vault swap", "chainid", fromChainID, "txid", txid)
-	if !params.IsVaultSwap() {
-		return nil, tokens.ErrVaultSwapNotSupport
+// RegisterRouterSwap register router swap
+func RegisterRouterSwap(fromChainID, txid string) (*MapIntResult, error) {
+	log.Debug("[api] receive router swap", "chainid", fromChainID, "txid", txid)
+	if !params.IsRouterSwap() {
+		return nil, tokens.ErrRouterSwapNotSupport
 	}
 	chainID, err := common.GetBigIntFromStr(fromChainID)
 	if err != nil {
 		return nil, newRPCInternalError(err)
 	}
 	bridge := tokens.GetCrossChainBridgeByChainID(chainID.String())
-	vaultSwapper, ok := bridge.(tokens.VaultSwapper)
+	routerSwapper, ok := bridge.(tokens.RouterSwapper)
 	if !ok {
-		return nil, tokens.ErrVaultSwapNotSupport
+		return nil, tokens.ErrRouterSwapNotSupport
 	}
 	result := MapIntResult(make(map[int]string))
-	swapInfos, errs := vaultSwapper.RegisterVaultSwapTx(txid)
+	swapInfos, errs := routerSwapper.RegisterRouterSwapTx(txid)
 	for i, swapInfo := range swapInfos {
 		logIndex := swapInfo.LogIndex
 		err := errs[i]
@@ -384,7 +384,7 @@ func RegisterVaultSwap(fromChainID, txid string) (*MapIntResult, error) {
 			PairID:    swapInfo.PairID,
 			TxID:      txid,
 			TxTo:      swapInfo.TxTo,
-			TxType:    uint32(tokens.VaultSwapTx),
+			TxType:    uint32(tokens.RouterSwapTx),
 			Bind:      swapInfo.Bind,
 			Status:    mongodb.GetStatusByTokenVerifyError(err),
 			Timestamp: time.Now().Unix(),
@@ -399,38 +399,38 @@ func RegisterVaultSwap(fromChainID, txid string) (*MapIntResult, error) {
 			ToChainID:     swapInfo.ToChainID.String(),
 			LogIndex:      swapInfo.LogIndex,
 		}
-		err = mongodb.AddVaultSwap(swap)
+		err = mongodb.AddRouterSwap(swap)
 		if err != nil {
-			log.Warn("[api] add vault swap", "swap", swap, "err", err)
+			log.Warn("[api] add router swap", "swap", swap, "err", err)
 		} else {
-			log.Info("[api] add vault swap", "swap", swap)
+			log.Info("[api] add router swap", "swap", swap)
 		}
 		result[logIndex] = "success"
 	}
 	return &result, nil
 }
 
-// GetVaultSwap impl
-func GetVaultSwap(fromChainID, txid, logindexStr string) (*SwapInfo, error) {
+// GetRouterSwap impl
+func GetRouterSwap(fromChainID, txid, logindexStr string) (*SwapInfo, error) {
 	logindex, err := common.GetIntFromStr(logindexStr)
 	if err != nil {
 		return nil, err
 	}
-	result, err := mongodb.FindVaultSwapResult(fromChainID, txid, logindex)
+	result, err := mongodb.FindRouterSwapResult(fromChainID, txid, logindex)
 	if err == nil {
 		return ConvertMgoSwapResultToSwapInfo(result), nil
 	}
-	register, err := mongodb.FindVaultSwap(fromChainID, txid, logindex)
+	register, err := mongodb.FindRouterSwap(fromChainID, txid, logindex)
 	if err == nil {
 		return ConvertMgoSwapToSwapInfo(register), nil
 	}
 	return nil, mongodb.ErrSwapNotFound
 }
 
-// GetVaultSwapHistory impl
-func GetVaultSwapHistory(fromChainID, address string, offset, limit int) ([]*SwapInfo, error) {
+// GetRouterSwapHistory impl
+func GetRouterSwapHistory(fromChainID, address string, offset, limit int) ([]*SwapInfo, error) {
 	limit = processHistoryLimit(limit)
-	result, err := mongodb.FindVaultSwapResults(fromChainID, address, offset, limit)
+	result, err := mongodb.FindRouterSwapResults(fromChainID, address, offset, limit)
 	if err != nil {
 		return nil, err
 	}

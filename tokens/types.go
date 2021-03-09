@@ -39,7 +39,7 @@ type ChainConfig struct {
 	WaitTimeToReplace       int64  // seconds
 	MaxReplaceCount         int
 
-	VaultContract      string `json:",omitempty"`
+	RouterContract     string `json:",omitempty"`
 	SwapDeadlineOffset int64  `json:",omitempty"` // seconds
 
 	chainID *big.Int
@@ -150,7 +150,7 @@ const (
 	SwapinTx     SwapTxType = iota // 0
 	SwapoutTx                      // 1
 	P2shSwapinTx                   // 2
-	VaultSwapTx                    // 3
+	RouterSwapTx                   // 3
 )
 
 func (s SwapTxType) String() string {
@@ -161,15 +161,15 @@ func (s SwapTxType) String() string {
 		return "swapouttx"
 	case P2shSwapinTx:
 		return "p2shswapintx"
-	case VaultSwapTx:
-		return "vaultswaptx"
+	case RouterSwapTx:
+		return "routerswaptx"
 	default:
 		return fmt.Sprintf("unknown swaptx type %d", s)
 	}
 }
 
-// VaultSwapInfo struct
-type VaultSwapInfo struct {
+// RouterSwapInfo struct
+type RouterSwapInfo struct {
 	ForNative     bool     `json:"forNative,omitempty"`
 	ForUnderlying bool     `json:"forUnderlying,omitempty"`
 	Token         string   `json:"token"`
@@ -182,7 +182,7 @@ type VaultSwapInfo struct {
 
 // TxSwapInfo struct
 type TxSwapInfo struct {
-	VaultSwapInfo `json:"swapInfo,omitempty"`
+	RouterSwapInfo `json:"swapInfo,omitempty"`
 
 	PairID    string   `json:"pairid"`
 	Hash      string   `json:"hash"`
@@ -206,7 +206,7 @@ type TxStatus struct {
 
 // SwapInfo struct
 type SwapInfo struct {
-	VaultSwapInfo `json:"swapInfo,omitempty"`
+	RouterSwapInfo `json:"swapInfo,omitempty"`
 
 	PairID     string     `json:"pairid,omitempty"`
 	SwapID     string     `json:"swapid,omitempty"`

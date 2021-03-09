@@ -20,7 +20,7 @@ var (
 	ErrBuildSwapTxInWrongEndpoint    = errors.New("build swap in/out tx in wrong endpoint")
 	ErrTxBeforeInitialHeight         = errors.New("transaction before initial block height")
 	ErrAddressIsInBlacklist          = errors.New("address is in black list")
-	ErrVaultSwapNotSupport           = errors.New("bridge does not support vault swap")
+	ErrRouterSwapNotSupport          = errors.New("bridge does not support router swap")
 	ErrNoBridgeForChainID            = errors.New("no bridge for chain id")
 
 	ErrTodo = errors.New("developing: TODO")
@@ -112,8 +112,8 @@ type NonceSetter interface {
 	IncreaseNonce(pairID string, value uint64)
 }
 
-// VaultSwapper interface
-type VaultSwapper interface {
-	RegisterVaultSwapTx(txHash string) ([]*TxSwapInfo, []error)
-	VerifyVaultSwapTx(txHash string, logIndex int, allowUnstable bool) (*TxSwapInfo, error)
+// RouterSwapper interface
+type RouterSwapper interface {
+	RegisterRouterSwapTx(txHash string) ([]*TxSwapInfo, []error)
+	VerifyRouterSwapTx(txHash string, logIndex int, allowUnstable bool) (*TxSwapInfo, error)
 }

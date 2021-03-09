@@ -66,7 +66,7 @@ func acceptSign() {
 				errInitiatorMismatch,
 				errWrongMsgContext,
 				tokens.ErrNoBridgeForChainID,
-				tokens.ErrVaultSwapNotSupport,
+				tokens.ErrRouterSwapNotSupport,
 				tokens.ErrUnknownPairID,
 				tokens.ErrNoBtcBridge,
 				tokens.ErrTxNotStable,
@@ -122,7 +122,7 @@ func verifySignInfo(signInfo *dcrm.SignInfoData) error {
 }
 
 func getSrcAndDestBridge(args *tokens.BuildTxArgs) (srcBridge, dstBridge tokens.CrossChainBridge, err error) {
-	if params.IsVaultSwap() {
+	if params.IsRouterSwap() {
 		srcBridge = tokens.GetCrossChainBridgeByChainID(args.FromChainID.String())
 		dstBridge = tokens.GetCrossChainBridgeByChainID(args.ToChainID.String())
 		if srcBridge == nil || dstBridge == nil {

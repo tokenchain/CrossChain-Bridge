@@ -6,51 +6,51 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/internal/swapapi"
 )
 
-// VaultSwapAPI rpc api handler
-type VaultSwapAPI struct{}
+// RouterSwapAPI rpc api handler
+type RouterSwapAPI struct{}
 
-// VaultRegisterSwapArgs args
-type VaultRegisterSwapArgs struct {
+// RouterRegisterSwapArgs args
+type RouterRegisterSwapArgs struct {
 	ChainID string `json:"chainid"`
 	TxID    string `json:"txid"`
 }
 
-// RegisterVaultSwap api
-func (s *VaultSwapAPI) RegisterVaultSwap(r *http.Request, args *VaultRegisterSwapArgs, result *swapapi.MapIntResult) error {
-	res, err := swapapi.RegisterVaultSwap(args.ChainID, args.TxID)
+// RegisterRouterSwap api
+func (s *RouterSwapAPI) RegisterRouterSwap(r *http.Request, args *RouterRegisterSwapArgs, result *swapapi.MapIntResult) error {
+	res, err := swapapi.RegisterRouterSwap(args.ChainID, args.TxID)
 	if err == nil && res != nil {
 		*result = *res
 	}
 	return err
 }
 
-// VaultGetSwapArgs args
-type VaultGetSwapArgs struct {
+// RouterGetSwapArgs args
+type RouterGetSwapArgs struct {
 	ChainID  string `json:"chainid"`
 	TxID     string `json:"txid"`
 	LogIndex string `json:"logindex"`
 }
 
-// GetVaultSwap api
-func (s *VaultSwapAPI) GetVaultSwap(r *http.Request, args *VaultGetSwapArgs, result *swapapi.SwapInfo) error {
-	res, err := swapapi.GetVaultSwap(args.ChainID, args.TxID, args.LogIndex)
+// GetRouterSwap api
+func (s *RouterSwapAPI) GetRouterSwap(r *http.Request, args *RouterGetSwapArgs, result *swapapi.SwapInfo) error {
+	res, err := swapapi.GetRouterSwap(args.ChainID, args.TxID, args.LogIndex)
 	if err == nil && res != nil {
 		*result = *res
 	}
 	return err
 }
 
-// VaultGetSwapHistoryArgs args
-type VaultGetSwapHistoryArgs struct {
+// RouterGetSwapHistoryArgs args
+type RouterGetSwapHistoryArgs struct {
 	ChainID string `json:"chainid"`
 	Address string `json:"address"`
 	Offset  int    `json:"offset"`
 	Limit   int    `json:"limit"`
 }
 
-// GetVaultSwapHistory api
-func (s *VaultSwapAPI) GetVaultSwapHistory(r *http.Request, args *VaultGetSwapHistoryArgs, result *[]*swapapi.SwapInfo) error {
-	res, err := swapapi.GetVaultSwapHistory(args.ChainID, args.Address, args.Offset, args.Limit)
+// GetRouterSwapHistory api
+func (s *RouterSwapAPI) GetRouterSwapHistory(r *http.Request, args *RouterGetSwapHistoryArgs, result *[]*swapapi.SwapInfo) error {
+	res, err := swapapi.GetRouterSwapHistory(args.ChainID, args.Address, args.Offset, args.Limit)
 	if err == nil && res != nil {
 		*result = res
 	}

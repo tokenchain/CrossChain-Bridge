@@ -244,27 +244,27 @@ func GetRegisteredAddress(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, res, err)
 }
 
-// RegisterVaultSwapHandler handler
-func RegisterVaultSwapHandler(w http.ResponseWriter, r *http.Request) {
+// RegisterRouterSwapHandler handler
+func RegisterRouterSwapHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	chainID := vars["chainid"]
 	txid := vars["txid"]
-	res, err := swapapi.RegisterVaultSwap(chainID, txid)
+	res, err := swapapi.RegisterRouterSwap(chainID, txid)
 	writeResponse(w, res, err)
 }
 
-// GetVaultSwapHandler handler
-func GetVaultSwapHandler(w http.ResponseWriter, r *http.Request) {
+// GetRouterSwapHandler handler
+func GetRouterSwapHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	chainID := vars["chainid"]
 	txid := vars["txid"]
 	logindex := vars["logindex"]
-	res, err := swapapi.GetVaultSwap(chainID, txid, logindex)
+	res, err := swapapi.GetRouterSwap(chainID, txid, logindex)
 	writeResponse(w, res, err)
 }
 
-// GetVaultSwapHistoryHandler handler
-func GetVaultSwapHistoryHandler(w http.ResponseWriter, r *http.Request) {
+// GetRouterSwapHistoryHandler handler
+func GetRouterSwapHistoryHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	chainID := vars["chainid"]
 	address := vars["address"]
@@ -272,7 +272,7 @@ func GetVaultSwapHistoryHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeResponse(w, nil, err)
 	} else {
-		res, err := swapapi.GetVaultSwapHistory(chainID, address, offset, limit)
+		res, err := swapapi.GetRouterSwapHistory(chainID, address, offset, limit)
 		writeResponse(w, res, err)
 	}
 }
