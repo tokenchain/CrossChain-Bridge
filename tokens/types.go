@@ -185,7 +185,7 @@ type RouterSwapInfo struct {
 
 // TxSwapInfo struct
 type TxSwapInfo struct {
-	RouterSwapInfo `json:"swapInfo,omitempty"`
+	*RouterSwapInfo `json:"swapInfo,omitempty"`
 
 	PairID    string   `json:"pairid"`
 	Hash      string   `json:"hash"`
@@ -209,7 +209,7 @@ type TxStatus struct {
 
 // SwapInfo struct
 type SwapInfo struct {
-	RouterSwapInfo `json:"swapInfo,omitempty"`
+	*RouterSwapInfo `json:"swapInfo,omitempty"`
 
 	PairID     string     `json:"pairid,omitempty"`
 	SwapID     string     `json:"swapid,omitempty"`

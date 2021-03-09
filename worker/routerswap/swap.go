@@ -138,8 +138,37 @@ func processRouterSwap(swap *mongodb.MgoSwap) (err error) {
 		From:        toTokenCfg.DcrmAddress,
 		OriginValue: value,
 	}
+	args.RouterSwapInfo, err = getRouterSwapInfoFromSwap(swap)
+	if err != nil {
+		return err
+	}
 
 	return dispatchSwapTask(args)
+}
+
+func getRouterSwapInfoFromSwap(swap *mongodb.MgoSwap) (*tokens.RouterSwapInfo, error) {
+	amountOutMin, err := common.GetBigIntFromStr(swap.AmountOutMin)
+	if err != nil {
+		return nil, fmt.Errorf("wrong amountOutMin %v", swap.AmountOutMin)
+	}
+	fromChainID, err := common.GetBigIntFromStr(swap.FromChainID)
+	if err != nil {
+		return nil, fmt.Errorf("wrong fromChainID %v", swap.FromChainID)
+	}
+	toChainID, err := common.GetBigIntFromStr(swap.ToChainID)
+	if err != nil {
+		return nil, fmt.Errorf("wrong toChainID %v", swap.ToChainID)
+	}
+	return &tokens.RouterSwapInfo{
+		ForNative:     swap.ForNative,
+		ForUnderlying: swap.ForUnderlying,
+		Token:         swap.Token,
+		Path:          swap.Path,
+		AmountOutMin:  amountOutMin,
+		FromChainID:   fromChainID,
+		ToChainID:     toChainID,
+		LogIndex:      swap.LogIndex,
+	}, nil
 }
 
 func preventReswap(res *mongodb.MgoSwapResult) (err error) {
