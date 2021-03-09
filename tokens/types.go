@@ -127,6 +127,7 @@ const (
 	NoSwapType SwapType = iota
 	SwapinType
 	SwapoutType
+	RouterSwapType
 )
 
 func (s SwapType) String() string {
@@ -137,6 +138,8 @@ func (s SwapType) String() string {
 		return "swapin"
 	case SwapoutType:
 		return "swapout"
+	case RouterSwapType:
+		return "routerswap"
 	default:
 		return fmt.Sprintf("unknown swap type %d", s)
 	}

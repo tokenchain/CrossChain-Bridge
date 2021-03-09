@@ -46,6 +46,8 @@ func ConvertMgoSwapResultToSwapInfo(mr *mongodb.MgoSwapResult) *SwapInfo {
 			latest = tokens.DstLatestBlockHeight
 		case uint32(tokens.SwapoutType):
 			latest = tokens.SrcLatestBlockHeight
+		case uint32(tokens.RouterSwapType):
+			latest, _ = tokens.GetCrossChainBridgeByChainID(mr.ToChainID).GetLatestBlockNumber()
 		}
 		if latest > mr.SwapHeight {
 			confirmations = latest - mr.SwapHeight

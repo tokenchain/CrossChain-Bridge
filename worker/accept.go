@@ -122,7 +122,14 @@ func verifySignInfo(signInfo *dcrm.SignInfoData) error {
 }
 
 func getSrcAndDestBridge(args *tokens.BuildTxArgs) (srcBridge, dstBridge tokens.CrossChainBridge, err error) {
-	if params.IsRouterSwap() {
+	switch args.SwapType {
+	case tokens.SwapinType:
+		srcBridge = tokens.SrcBridge
+		dstBridge = tokens.DstBridge
+	case tokens.SwapoutType:
+		srcBridge = tokens.DstBridge
+		dstBridge = tokens.SrcBridge
+	case tokens.RouterSwapType:
 		srcBridge = tokens.GetCrossChainBridgeByChainID(args.FromChainID.String())
 		dstBridge = tokens.GetCrossChainBridgeByChainID(args.ToChainID.String())
 		if srcBridge == nil || dstBridge == nil {
@@ -133,17 +140,8 @@ func getSrcAndDestBridge(args *tokens.BuildTxArgs) (srcBridge, dstBridge tokens.
 			}
 			err = tokens.ErrNoBridgeForChainID
 		}
-	} else {
-		switch args.SwapType {
-		case tokens.SwapinType:
-			srcBridge = tokens.SrcBridge
-			dstBridge = tokens.DstBridge
-		case tokens.SwapoutType:
-			srcBridge = tokens.DstBridge
-			dstBridge = tokens.SrcBridge
-		default:
-			err = fmt.Errorf("unknown swap type %v", args.SwapType)
-		}
+	default:
+		err = fmt.Errorf("unknown swap type %v", args.SwapType)
 	}
 	return srcBridge, dstBridge, err
 }

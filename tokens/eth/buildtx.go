@@ -36,15 +36,23 @@ func (b *Bridge) getTokenConfig(args *tokens.BuildTxArgs) (*tokens.TokenConfig, 
 func (b *Bridge) BuildRawTransaction(args *tokens.BuildTxArgs) (rawTx interface{}, err error) {
 	var input []byte
 	var tokenCfg *tokens.TokenConfig
-	if args.Input == nil {
+	isSwapTx := args.SwapType != tokens.NoSwapType
+	if args.Input != nil {
+		if isSwapTx {
+			return nil, fmt.Errorf("forbid build raw swap tx with input data")
+		}
+		input = *args.Input
+	} else if isSwapTx {
 		tokenCfg, err = b.getTokenConfig(args)
 		if err != nil {
 			return nil, err
 		}
-		if args.SwapType != tokens.NoSwapType && args.From == "" {
+		if args.From == "" {
 			args.From = tokenCfg.DcrmAddress // from
 		}
 		switch args.SwapType {
+		case tokens.RouterSwapType:
+			err = b.buildRouterSwapTxInput(args)
 		case tokens.SwapinType:
 			err = b.buildSwapinTxInput(args)
 		case tokens.SwapoutType:
@@ -54,11 +62,6 @@ func (b *Bridge) BuildRawTransaction(args *tokens.BuildTxArgs) (rawTx interface{
 			return nil, err
 		}
 		input = *args.Input
-	} else {
-		input = *args.Input
-		if args.SwapType != tokens.NoSwapType {
-			return nil, fmt.Errorf("forbid build raw swap tx with input data")
-		}
 	}
 
 	extra, err := b.setDefaults(args)
@@ -77,17 +80,6 @@ func (b *Bridge) buildTx(args *tokens.BuildTxArgs, extra *tokens.EthExtraArgs, i
 		gasLimit = *extra.Gas
 		gasPrice = extra.GasPrice
 	)
-
-	if args.SwapType == tokens.SwapoutType {
-		pairID := args.PairID
-		tokenCfg := b.GetTokenConfig(pairID)
-		if tokenCfg == nil {
-			return nil, tokens.ErrUnknownPairID
-		}
-		if !tokenCfg.IsErc20() {
-			value = tokens.CalcSwappedValue(pairID, args.OriginValue, false)
-		}
-	}
 
 	if args.SwapType != tokens.NoSwapType {
 		args.Identifier = params.GetIdentifier()

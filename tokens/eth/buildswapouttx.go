@@ -25,25 +25,30 @@ var (
 	AnySwapInExactTokensForNativeFuncHash = common.FromHex("0x52a397d5")
 )
 
+func (b *Bridge) buildRouterSwapTxInput(args *tokens.BuildTxArgs) (err error) {
+	if !params.IsRouterSwap() || b.ChainConfig.RouterContract == "" {
+		return tokens.ErrRouterSwapNotSupport
+	}
+	if len(args.Path) > 0 && args.AmountOutMin != nil {
+		return b.buildRouterSwapTradeTxInput(args)
+	}
+	return b.buildRouterSwapoutTxInput(args)
+}
+
 func (b *Bridge) buildSwapoutTxInput(args *tokens.BuildTxArgs, tokenCfg *tokens.TokenConfig) (err error) {
-	isRouterSwap := params.IsRouterSwap() || b.ChainConfig.RouterContract != ""
-	if !isRouterSwap && !b.IsSrc {
+	if !b.IsSrc {
 		return tokens.ErrBuildSwapTxInWrongEndpoint
 	}
 	switch {
-	case isRouterSwap:
-		if len(args.Path) > 0 && args.AmountOutMin != nil {
-			return b.buildRouterSwapoutTradeTxInput(args)
-		}
-		return b.buildRouterSwapoutTxInput(args)
 	case tokenCfg.IsErc20():
 		return b.buildErc20SwapoutTxInput(args)
 	default:
 		input := []byte(tokens.UnlockMemoPrefix + args.SwapID)
 		args.Input = &input // input
 		args.To = args.Bind // to
-		return nil
+		args.Value = tokens.CalcSwapValue(tokenCfg, args.OriginValue)
 	}
+	return nil
 }
 
 func (b *Bridge) buildErc20SwapoutTxInput(args *tokens.BuildTxArgs) (err error) {
@@ -80,7 +85,7 @@ func (b *Bridge) buildRouterSwapoutTxInput(args *tokens.BuildTxArgs) (err error)
 	return b.checkBalance(token.ContractAddress, token.DcrmAddress, amount)
 }
 
-func (b *Bridge) buildRouterSwapoutTradeTxInput(args *tokens.BuildTxArgs) (err error) {
+func (b *Bridge) buildRouterSwapTradeTxInput(args *tokens.BuildTxArgs) (err error) {
 	token, receiver, amount, err := b.checkSwapoutReceiverAndAmount(args)
 	if err != nil {
 		return err
