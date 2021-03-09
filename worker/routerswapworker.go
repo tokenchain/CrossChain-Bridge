@@ -2,6 +2,8 @@ package worker
 
 import (
 	"time"
+
+	"github.com/anyswap/CrossChain-Bridge/worker/routerswap"
 )
 
 // StartRouterSwapWork start router swap job
@@ -11,14 +13,14 @@ func StartRouterSwapWork(isServer bool) {
 		return
 	}
 
-	go StartVerifyJob()
+	go routerswap.StartVerifyJob()
 	time.Sleep(interval)
 
-	go StartSwapJob()
+	go routerswap.StartSwapJob()
 	time.Sleep(interval)
 
-	go StartStableJob()
+	go routerswap.StartStableJob()
 	time.Sleep(interval)
 
-	go StartReplaceJob()
+	go routerswap.StartReplaceJob()
 }
