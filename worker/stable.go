@@ -117,7 +117,7 @@ func getSwapTxStatus(resBridge tokens.CrossChainBridge, swap *mongodb.MgoSwapRes
 
 func processSwapStable(swap *mongodb.MgoSwapResult, isSwapin bool) (err error) {
 	oldSwapTx := swap.SwapTx
-	resBridge := tokens.GetBridge(swap.ToChainID, !isSwapin)
+	resBridge := tokens.GetCrossChainBridge(!isSwapin)
 	txStatus := getSwapTxStatus(resBridge, swap)
 	if txStatus == nil || txStatus.BlockHeight == 0 {
 		return nil

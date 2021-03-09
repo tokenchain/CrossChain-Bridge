@@ -212,7 +212,7 @@ func processNonEmptySwapResult(res *mongodb.MgoSwapResult, isSwapin bool) error 
 	if res.Status != mongodb.MatchTxEmpty {
 		return errAlreadySwapped
 	}
-	resBridge := tokens.GetBridge(res.ToChainID, !isSwapin)
+	resBridge := tokens.GetCrossChainBridge(!isSwapin)
 	if _, err := resBridge.GetTransaction(res.SwapTx); err == nil {
 		return errAlreadySwapped
 	}
@@ -229,7 +229,7 @@ func processHistory(res *mongodb.MgoSwapResult, isSwapin bool) error {
 		history.txid = "" // mark ineffective
 		return nil
 	}
-	resBridge := tokens.GetBridge(res.ToChainID, !isSwapin)
+	resBridge := tokens.GetCrossChainBridge(!isSwapin)
 	swapType := getSwapType(isSwapin)
 	if _, err := resBridge.GetTransaction(history.matchTx); err == nil {
 		matchTx := &MatchTx{
@@ -287,7 +287,7 @@ func doSwap(args *tokens.BuildTxArgs) (err error) {
 	originValue := args.OriginValue
 
 	isSwapin := swapType == tokens.SwapinType
-	resBridge := tokens.GetBridge(args.ToChainID.String(), !isSwapin)
+	resBridge := tokens.GetCrossChainBridge(!isSwapin)
 
 	res, err := mongodb.FindSwapResult(isSwapin, txid, pairID, bind)
 	if err != nil {

@@ -30,32 +30,24 @@ func addInitialSwapResult(swapInfo *tokens.TxSwapInfo, status mongodb.SwapStatus
 		swapType = tokens.SwapoutType
 	}
 	swapResult := &mongodb.MgoSwapResult{
-		PairID:        swapInfo.PairID,
-		TxID:          txid,
-		TxTo:          swapInfo.TxTo,
-		TxHeight:      swapInfo.Height,
-		TxTime:        swapInfo.Timestamp,
-		From:          swapInfo.From,
-		To:            swapInfo.To,
-		Bind:          swapInfo.Bind,
-		Value:         swapInfo.Value.String(),
-		SwapTx:        "",
-		SwapHeight:    0,
-		SwapTime:      0,
-		SwapValue:     "0",
-		SwapType:      uint32(swapType),
-		SwapNonce:     0,
-		Status:        status,
-		Timestamp:     now(),
-		Memo:          "",
-		ForNative:     swapInfo.ForNative,
-		ForUnderlying: swapInfo.ForUnderlying,
-		Token:         swapInfo.Token,
-		Path:          swapInfo.Path,
-		AmountOutMin:  swapInfo.AmountOutMin.String(),
-		FromChainID:   swapInfo.FromChainID.String(),
-		ToChainID:     swapInfo.ToChainID.String(),
-		LogIndex:      swapInfo.LogIndex,
+		PairID:     swapInfo.PairID,
+		TxID:       txid,
+		TxTo:       swapInfo.TxTo,
+		TxHeight:   swapInfo.Height,
+		TxTime:     swapInfo.Timestamp,
+		From:       swapInfo.From,
+		To:         swapInfo.To,
+		Bind:       swapInfo.Bind,
+		Value:      swapInfo.Value.String(),
+		SwapTx:     "",
+		SwapHeight: 0,
+		SwapTime:   0,
+		SwapValue:  "0",
+		SwapType:   uint32(swapType),
+		SwapNonce:  0,
+		Status:     status,
+		Timestamp:  now(),
+		Memo:       "",
 	}
 	if isSwapin {
 		err = mongodb.AddSwapinResult(swapResult)
@@ -176,18 +168,8 @@ func markSwapResultFailed(txid, pairID, bind string, isSwapin bool) (err error) 
 	return err
 }
 
-func verifySwapTransaction(
-	bridge tokens.CrossChainBridge,
-	pairID, txid, bind string,
-	swapTxType tokens.SwapTxType,
-	logIndex int) (swapInfo *tokens.TxSwapInfo, err error) {
+func verifySwapTransaction(bridge tokens.CrossChainBridge, pairID, txid, bind string, swapTxType tokens.SwapTxType) (swapInfo *tokens.TxSwapInfo, err error) {
 	switch swapTxType {
-	case tokens.RouterSwapTx:
-		routerSwapper, ok := bridge.(tokens.RouterSwapper)
-		if !ok {
-			return nil, tokens.ErrRouterSwapNotSupport
-		}
-		swapInfo, err = routerSwapper.VerifyRouterSwapTx(txid, logIndex, false)
 	case tokens.P2shSwapinTx:
 		if btc.BridgeInstance == nil {
 			return nil, tokens.ErrNoBtcBridge

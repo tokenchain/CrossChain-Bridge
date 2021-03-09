@@ -65,8 +65,6 @@ func acceptSign() {
 			case errIdentifierMismatch,
 				errInitiatorMismatch,
 				errWrongMsgContext,
-				tokens.ErrNoBridgeForChainID,
-				tokens.ErrRouterSwapNotSupport,
 				tokens.ErrUnknownPairID,
 				tokens.ErrNoBtcBridge,
 				tokens.ErrTxNotStable,
@@ -121,7 +119,8 @@ func verifySignInfo(signInfo *dcrm.SignInfoData) error {
 	return rebuildAndVerifyMsgHash(msgHash, &args)
 }
 
-func getSrcAndDestBridge(args *tokens.BuildTxArgs) (srcBridge, dstBridge tokens.CrossChainBridge, err error) {
+func rebuildAndVerifyMsgHash(msgHash []string, args *tokens.BuildTxArgs) error {
+	var srcBridge, dstBridge tokens.CrossChainBridge
 	switch args.SwapType {
 	case tokens.SwapinType:
 		srcBridge = tokens.SrcBridge
@@ -129,27 +128,8 @@ func getSrcAndDestBridge(args *tokens.BuildTxArgs) (srcBridge, dstBridge tokens.
 	case tokens.SwapoutType:
 		srcBridge = tokens.DstBridge
 		dstBridge = tokens.SrcBridge
-	case tokens.RouterSwapType:
-		srcBridge = tokens.GetCrossChainBridgeByChainID(args.FromChainID.String())
-		dstBridge = tokens.GetCrossChainBridgeByChainID(args.ToChainID.String())
-		if srcBridge == nil || dstBridge == nil {
-			if srcBridge == nil {
-				logWorkerTrace("accept", "no bridge for chain id", "chainID", args.FromChainID)
-			} else {
-				logWorkerTrace("accept", "no bridge for chain id", "chainID", args.ToChainID)
-			}
-			err = tokens.ErrNoBridgeForChainID
-		}
 	default:
-		err = fmt.Errorf("unknown swap type %v", args.SwapType)
-	}
-	return srcBridge, dstBridge, err
-}
-
-func rebuildAndVerifyMsgHash(msgHash []string, args *tokens.BuildTxArgs) error {
-	srcBridge, dstBridge, err := getSrcAndDestBridge(args)
-	if err != nil {
-		return err
+		return fmt.Errorf("unknown swap type %v", args.SwapType)
 	}
 
 	tokenCfg := dstBridge.GetTokenConfig(args.PairID)
@@ -157,7 +137,7 @@ func rebuildAndVerifyMsgHash(msgHash []string, args *tokens.BuildTxArgs) error {
 		return tokens.ErrUnknownPairID
 	}
 
-	swapInfo, err := verifySwapTransaction(srcBridge, args.PairID, args.SwapID, args.Bind, args.TxType, args.LogIndex)
+	swapInfo, err := verifySwapTransaction(srcBridge, args.PairID, args.SwapID, args.Bind, args.TxType)
 	if err != nil {
 		logWorkerError("accept", "verifySignInfo failed", err, "pairID", args.PairID, "txid", args.SwapID, "bind", args.Bind, "swaptype", args.SwapType)
 		return err

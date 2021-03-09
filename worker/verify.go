@@ -34,7 +34,7 @@ func startSwapinVerifyJob() {
 				switch err {
 				case nil, tokens.ErrTxNotStable, tokens.ErrTxNotFound:
 				default:
-					logWorkerError("verify", "process swapin verify error", err, "txid", swap.TxID, "logIndex", swap.LogIndex)
+					logWorkerError("verify", "process swapin verify error", err, "txid", swap.TxID)
 				}
 			}
 			restInJob(restIntervalInVerifyJob)
@@ -58,7 +58,7 @@ func startSwapoutVerifyJob() {
 				switch err {
 				case nil, tokens.ErrTxNotStable, tokens.ErrTxNotFound:
 				default:
-					logWorkerError("verify", "process swapout verify error", err, "txid", swap.TxID, "logIndex", swap.LogIndex)
+					logWorkerError("verify", "process swapout verify error", err, "txid", swap.TxID)
 				}
 			}
 			restInJob(restIntervalInVerifyJob)
@@ -104,9 +104,9 @@ func processSwapVerify(swap *mongodb.MgoSwap, isSwapin bool) (err error) {
 	pairID := swap.PairID
 	txid := swap.TxID
 	bind := swap.Bind
-	bridge := tokens.GetBridge(swap.FromChainID, isSwapin)
+	bridge := tokens.GetCrossChainBridge(isSwapin)
 
-	swapInfo, err := verifySwapTransaction(bridge, pairID, txid, bind, tokens.SwapTxType(swap.TxType), swap.LogIndex)
+	swapInfo, err := verifySwapTransaction(bridge, pairID, txid, bind, tokens.SwapTxType(swap.TxType))
 	if swapInfo == nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func updateSwapStatus(pairID, txid, bind string, swapInfo *tokens.TxSwapInfo, is
 	}
 
 	if err != nil {
-		logWorkerError("verify", "update swap status", err, "txid", txid, "logIndex", swapInfo.LogIndex, "bind", bind, "isSwapin", isSwapin)
+		logWorkerError("verify", "update swap status", err, "txid", txid, "bind", bind, "isSwapin", isSwapin)
 		return err
 	}
 	return addInitialSwapResult(swapInfo, resultStatus, isSwapin)
