@@ -9,7 +9,7 @@ import (
 // StartRouterSwapWork start router swap job
 func StartRouterSwapWork(isServer bool) {
 	if !isServer {
-		go StartAcceptSignJob()
+		go routerswap.StartAcceptSignJob()
 		return
 	}
 
