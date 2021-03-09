@@ -111,6 +111,40 @@ func FindRouterSwapsWithChainIDAndStatus(fromChainID string, status SwapStatus, 
 	return result, nil
 }
 
+// AddRouterSwapResult add router swap result
+func AddRouterSwapResult(mr *MgoSwapResult) error {
+	mr.Key = getRouterSwapKey(mr.FromChainID, mr.TxID, mr.LogIndex)
+	err := collRouterSwapResult.Insert(mr)
+	if err == nil {
+		log.Info("mongodb add router swap result success", "chainid", mr.FromChainID, "txid", mr.TxID, "logindex", mr.LogIndex)
+	} else {
+		log.Debug("mongodb add router swap result failed", "chainid", mr.FromChainID, "txid", mr.TxID, "logindex", mr.LogIndex, "err", err)
+	}
+	return mgoError(err)
+}
+
+// UpdateRouterSwapResultStatus update router swap result status
+func UpdateRouterSwapResultStatus(fromChainID, txid string, logindex int, status SwapStatus, timestamp int64, memo string) error {
+	key := getRouterSwapKey(fromChainID, txid, logindex)
+	updates := bson.M{"status": status, "timestamp": timestamp}
+	if memo != "" {
+		updates["memo"] = memo
+	} else if status == MatchTxEmpty {
+		updates["memo"] = ""
+		updates["swaptx"] = ""
+		updates["oldswaptxs"] = nil
+		updates["swapheight"] = 0
+		updates["swaptime"] = 0
+	}
+	err := collRouterSwapResult.UpdateId(key, bson.M{"$set": updates})
+	if err == nil {
+		log.Info("mongodb update swap result status success", "chainid", fromChainID, "txid", txid, "logindex", logindex, "status", status)
+	} else {
+		log.Debug("mongodb update swap result status failed", "chainid", fromChainID, "txid", txid, "logindex", logindex, "status", status, "err", err)
+	}
+	return mgoError(err)
+}
+
 // FindRouterSwapResult find router swap result
 func FindRouterSwapResult(fromChainID, txid string, logindex int) (*MgoSwapResult, error) {
 	key := getRouterSwapKey(fromChainID, txid, logindex)
@@ -181,4 +215,48 @@ func FindRouterSwapResults(fromChainID, address string, offset, limit int) ([]*M
 		return nil, mgoError(err)
 	}
 	return result, nil
+}
+
+// UpdateRouterSwapResult update router swap result
+func UpdateRouterSwapResult(fromChainID, txid string, logindex int, items *SwapResultUpdateItems) error {
+	key := getRouterSwapKey(fromChainID, txid, logindex)
+	updates := bson.M{
+		"timestamp": items.Timestamp,
+	}
+	if items.Status != KeepStatus {
+		updates["status"] = items.Status
+	}
+	if items.SwapTx != "" {
+		updates["swaptx"] = items.SwapTx
+	}
+	if len(items.OldSwapTxs) != 0 {
+		updates["oldswaptxs"] = items.OldSwapTxs
+	}
+	if items.SwapHeight != 0 {
+		updates["swapheight"] = items.SwapHeight
+	}
+	if items.SwapTime != 0 {
+		updates["swaptime"] = items.SwapTime
+	}
+	if items.SwapValue != "" {
+		updates["swapvalue"] = items.SwapValue
+	}
+	if items.SwapType != 0 {
+		updates["swaptype"] = items.SwapType
+	}
+	if items.SwapNonce != 0 {
+		updates["swapnonce"] = items.SwapNonce
+	}
+	if items.Memo != "" {
+		updates["memo"] = items.Memo
+	} else if items.Status == MatchTxNotStable {
+		updates["memo"] = ""
+	}
+	err := collRouterSwapResult.UpdateId(key, bson.M{"$set": updates})
+	if err == nil {
+		log.Info("mongodb update router swap result success", "chainid", fromChainID, "txid", txid, "logindex", logindex, "updates", updates)
+	} else {
+		log.Debug("mongodb update router swap result failed", "chainid", fromChainID, "txid", txid, "logindex", logindex, "updates", updates, "err", err)
+	}
+	return mgoError(err)
 }
