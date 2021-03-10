@@ -58,6 +58,7 @@ const (
 	ManualMakeFail                          // 16
 	BindAddrIsContract                      // 17
 	RPCQueryError                           // 18
+	TxWithWrongPath                         // 19
 
 	KeepStatus = 255
 )
@@ -162,6 +163,8 @@ func (status SwapStatus) String() string {
 		return "BindAddrIsContract"
 	case RPCQueryError:
 		return "RPCQueryError"
+	case TxWithWrongPath:
+		return "TxWithWrongPath"
 	default:
 		return fmt.Sprintf("unknown swap status %d", status)
 	}

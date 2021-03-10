@@ -17,6 +17,8 @@ func GetStatusByTokenVerifyError(err error) SwapStatus {
 		tokens.ErrTxWithWrongValue,
 		tokens.ErrBindAddrIsContract:
 		return TxNotStable
+	case tokens.ErrTxWithWrongPath:
+		return TxWithWrongPath
 	case tokens.ErrTxSenderNotRegistered:
 		return TxSenderNotRegistered
 	case tokens.ErrTxWithWrongSender:

@@ -83,6 +83,9 @@ func updateSwapStatus(bridge *router.Bridge, fromChainID, txid string, logIndex 
 			resultStatus = mongodb.TxWithBigValue
 		}
 		err = mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, status, now(), "")
+	case tokens.ErrTxWithWrongPath:
+		resultStatus = mongodb.TxWithWrongPath
+		err = mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxWithWrongPath, now(), err.Error())
 	case tokens.ErrTxWithWrongMemo:
 		resultStatus = mongodb.TxWithWrongMemo
 		err = mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxWithWrongMemo, now(), err.Error())

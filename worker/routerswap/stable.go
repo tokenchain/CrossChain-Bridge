@@ -76,11 +76,7 @@ func processRouterSwapStable(swap *mongodb.MgoSwapResult) (err error) {
 		}
 		if txStatus.Receipt != nil {
 			receipt, ok := txStatus.Receipt.(*types.RPCTxReceipt)
-			txFailed := !ok || receipt == nil || *receipt.Status != 1
-			token := resBridge.GetTokenConfig(swap.PairID)
-			if !txFailed && token != nil && token.ContractAddress != "" && len(receipt.Logs) == 0 {
-				txFailed = true
-			}
+			txFailed := !ok || receipt == nil || *receipt.Status != 1 || len(receipt.Logs) == 0
 			if txFailed {
 				return markSwapResultFailed(swap.FromChainID, swap.TxID, swap.LogIndex)
 			}
