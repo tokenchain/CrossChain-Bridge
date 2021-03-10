@@ -202,10 +202,9 @@ func processHistory(res *mongodb.MgoSwapResult) error {
 	}
 	resBridge := router.GetBridgeByChainID(res.ToChainID)
 	if _, err := resBridge.GetTransaction(history.matchTx); err == nil {
-		srcBridge := router.GetBridgeByChainID(res.FromChainID)
 		matchTx := &MatchTx{
 			SwapTx:    history.matchTx,
-			SwapValue: srcBridge.CalcSwapValue(res.Token, history.value).String(),
+			SwapValue: history.swapValue.String(),
 			SwapNonce: history.nonce,
 		}
 		_ = updateRouterSwapResult(chainID, txid, logIndex, matchTx)
@@ -248,11 +247,6 @@ func doSwap(args *tokens.BuildTxArgs) (err error) {
 	logIndex := args.LogIndex
 	originValue := args.OriginValue
 
-	srcBridge, resBridge, err := getBridges(chainID, args.ToChainID.String())
-	if err != nil {
-		return err
-	}
-
 	res, err := mongodb.FindRouterSwapResult(chainID, txid, logIndex)
 	if err != nil {
 		return err
@@ -263,6 +257,11 @@ func doSwap(args *tokens.BuildTxArgs) (err error) {
 	}
 
 	logWorker("doSwap", "start to process", "chainID", chainID, "txid", txid, "logIndex", logIndex, "value", originValue)
+
+	resBridge := router.GetBridgeByChainID(args.ToChainID.String())
+	if resBridge == nil {
+		return tokens.ErrNoBridgeForChainID
+	}
 
 	rawTx, err := resBridge.BuildRawTransaction(args)
 	if err != nil {
@@ -292,11 +291,11 @@ func doSwap(args *tokens.BuildTxArgs) (err error) {
 	}
 
 	// update database before sending transaction
-	addSwapHistory(chainID, txid, logIndex, originValue, txHash, swapTxNonce)
+	addSwapHistory(chainID, txid, logIndex, args.SwapValue, txHash, swapTxNonce)
 	matchTx := &MatchTx{
 		SwapTx:     txHash,
 		OldSwapTxs: oldSwapTxs,
-		SwapValue:  srcBridge.CalcSwapValue(args.Token, originValue).String(),
+		SwapValue:  args.SwapValue.String(),
 		SwapNonce:  swapTxNonce,
 	}
 	err = updateRouterSwapResult(chainID, txid, logIndex, matchTx)
@@ -315,24 +314,24 @@ func doSwap(args *tokens.BuildTxArgs) (err error) {
 }
 
 type swapInfo struct {
-	chainID  string
-	txid     string
-	logIndex int
-	value    *big.Int
-	matchTx  string
-	nonce    uint64
+	chainID   string
+	txid      string
+	logIndex  int
+	swapValue *big.Int
+	matchTx   string
+	nonce     uint64
 }
 
-func addSwapHistory(chainID, txid string, logIndex int, value *big.Int, matchTx string, nonce uint64) {
+func addSwapHistory(chainID, txid string, logIndex int, swapValue *big.Int, matchTx string, nonce uint64) {
 	// Create the new item as its own ring
 	item := ring.New(1)
 	item.Value = &swapInfo{
-		chainID:  chainID,
-		txid:     txid,
-		logIndex: logIndex,
-		value:    value,
-		matchTx:  matchTx,
-		nonce:    nonce,
+		chainID:   chainID,
+		txid:      txid,
+		logIndex:  logIndex,
+		swapValue: swapValue,
+		matchTx:   matchTx,
+		nonce:     nonce,
 	}
 
 	swapRingLock.Lock()

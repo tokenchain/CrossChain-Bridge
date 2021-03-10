@@ -51,6 +51,7 @@ func (b *Bridge) buildRouterSwapoutTxInput(args *tokens.BuildTxArgs) (err error)
 	input := PackDataWithFuncHash(funcHash, args.Token, receiver, amount, args.FromChainID)
 	args.Input = &input                    // input
 	args.To = b.ChainConfig.RouterContract // to
+	args.SwapValue = amount                // swapValue
 
 	return b.checkBalance(token.ContractAddress, token.DcrmAddress, amount)
 }
@@ -77,6 +78,7 @@ func (b *Bridge) buildRouterSwapTradeTxInput(args *tokens.BuildTxArgs) (err erro
 	input := PackDataWithFuncHash(funcHash, args.SwapID, amount, args.AmountOutMin, toAddresses(args.Path), receiver, deadline, args.FromChainID)
 	args.Input = &input                    // input
 	args.To = b.ChainConfig.RouterContract // to
+	args.SwapValue = amount                // swapValue
 
 	return b.checkBalance(token.ContractAddress, token.DcrmAddress, amount)
 }

@@ -227,6 +227,7 @@ type BuildTxArgs struct {
 	To          string     `json:"to,omitempty"`
 	Value       *big.Int   `json:"value,omitempty"`
 	OriginValue *big.Int   `json:"originValue,omitempty"`
+	SwapValue   *big.Int   `json:"swapValue,omitempty"`
 	Memo        string     `json:"memo,omitempty"`
 	Input       *[]byte    `json:"input,omitempty"`
 	Extra       *AllExtras `json:"extra,omitempty"`
