@@ -3,6 +3,7 @@ package routerswap
 import (
 	"github.com/anyswap/CrossChain-Bridge/mongodb"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
+	"github.com/anyswap/CrossChain-Bridge/tokens/router"
 	"github.com/anyswap/CrossChain-Bridge/types"
 )
 
@@ -60,7 +61,7 @@ func getSwapTxStatus(resBridge tokens.CrossChainBridge, swap *mongodb.MgoSwapRes
 
 func processRouterSwapStable(swap *mongodb.MgoSwapResult) (err error) {
 	oldSwapTx := swap.SwapTx
-	resBridge := tokens.GetCrossChainBridgeByChainID(swap.ToChainID)
+	resBridge := router.GetBridgeByChainID(swap.ToChainID)
 	txStatus := getSwapTxStatus(resBridge, swap)
 	if txStatus == nil || txStatus.BlockHeight == 0 {
 		return nil

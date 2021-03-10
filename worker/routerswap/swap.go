@@ -11,6 +11,7 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/mongodb"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
+	"github.com/anyswap/CrossChain-Bridge/tokens/router"
 )
 
 var (
@@ -190,7 +191,7 @@ func processNonEmptySwapResult(res *mongodb.MgoSwapResult) error {
 	if res.Status != mongodb.MatchTxEmpty {
 		return errAlreadySwapped
 	}
-	resBridge := tokens.GetCrossChainBridgeByChainID(res.ToChainID)
+	resBridge := router.GetBridgeByChainID(res.ToChainID)
 	if _, err := resBridge.GetTransaction(res.SwapTx); err == nil {
 		return errAlreadySwapped
 	}
@@ -209,7 +210,7 @@ func processHistory(res *mongodb.MgoSwapResult) error {
 		history.txid = "" // mark ineffective
 		return nil
 	}
-	resBridge := tokens.GetCrossChainBridgeByChainID(res.ToChainID)
+	resBridge := router.GetBridgeByChainID(res.ToChainID)
 	if _, err := resBridge.GetTransaction(history.matchTx); err == nil {
 		matchTx := &MatchTx{
 			SwapTx:    history.matchTx,
@@ -256,7 +257,7 @@ func doSwap(args *tokens.BuildTxArgs) (err error) {
 	logIndex := args.LogIndex
 	originValue := args.OriginValue
 
-	resBridge := tokens.GetCrossChainBridgeByChainID(args.ToChainID.String())
+	resBridge := router.GetBridgeByChainID(args.ToChainID.String())
 
 	res, err := mongodb.FindRouterSwapResult(chainID, txid, logIndex)
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/dcrm"
 	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
+	"github.com/anyswap/CrossChain-Bridge/tokens/router"
 )
 
 var (
@@ -110,8 +111,8 @@ func rebuildAndVerifyMsgHash(msgHash []string, args *tokens.BuildTxArgs) error {
 	var srcBridge, dstBridge tokens.CrossChainBridge
 	switch args.SwapType {
 	case tokens.RouterSwapType:
-		srcBridge = tokens.GetCrossChainBridgeByChainID(args.FromChainID.String())
-		dstBridge = tokens.GetCrossChainBridgeByChainID(args.ToChainID.String())
+		srcBridge = router.GetBridgeByChainID(args.FromChainID.String())
+		dstBridge = router.GetBridgeByChainID(args.ToChainID.String())
 		if srcBridge == nil || dstBridge == nil {
 			if srcBridge == nil {
 				logWorkerTrace("accept", "no bridge for chain id", "chainID", args.FromChainID)

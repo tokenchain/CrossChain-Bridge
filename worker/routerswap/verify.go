@@ -3,6 +3,7 @@ package routerswap
 import (
 	"github.com/anyswap/CrossChain-Bridge/mongodb"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
+	"github.com/anyswap/CrossChain-Bridge/tokens/router"
 )
 
 // StartVerifyJob verify job
@@ -48,7 +49,7 @@ func processRouterSwapVerify(swap *mongodb.MgoSwap) (err error) {
 	txid := swap.TxID
 	logIndex := swap.LogIndex
 
-	bridge := tokens.GetCrossChainBridgeByChainID(fromChainID)
+	bridge := router.GetBridgeByChainID(fromChainID)
 	routerSwapper, ok := bridge.(tokens.RouterSwapper)
 	if !ok {
 		return tokens.ErrRouterSwapNotSupport

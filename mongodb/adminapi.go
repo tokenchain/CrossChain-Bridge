@@ -141,7 +141,6 @@ func checkCanReswap(res *MgoSwapResult, forceOpt string, isSwapin bool) error {
 	switch swapType {
 	case tokens.SwapinType:
 	case tokens.SwapoutType:
-	case tokens.RouterSwapType:
 	default:
 		return fmt.Errorf("swap type is %v, can not reswap", swapType.String())
 	}
@@ -155,7 +154,7 @@ func checkCanReswap(res *MgoSwapResult, forceOpt string, isSwapin bool) error {
 	if res.SwapTx == "" {
 		return errors.New("swap without swaptx")
 	}
-	bridge := tokens.GetBridge(res.ToChainID, !isSwapin)
+	bridge := tokens.GetCrossChainBridge(!isSwapin)
 	_, err := bridge.GetTransaction(res.SwapTx)
 	if err == nil && res.Status != MatchTxFailed {
 		return errors.New("swaptx exist in chain or pool")

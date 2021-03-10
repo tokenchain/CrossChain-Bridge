@@ -67,7 +67,7 @@ func swaprouter(ctx *cli.Context) error {
 	if isServer {
 		dbConfig := config.MongoDB
 		mongodb.MongoServerInit([]string{dbConfig.DBURL}, dbConfig.DBName, dbConfig.UserName, dbConfig.Password)
-		worker.StartWork(true)
+		worker.StartRouterSwapWork(true)
 		time.Sleep(100 * time.Millisecond)
 		rpcserver.StartAPIServer()
 	} else {

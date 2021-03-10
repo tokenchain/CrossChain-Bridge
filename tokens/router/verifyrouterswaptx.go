@@ -113,7 +113,7 @@ func (b *Bridge) checkRouterSwapInfo(swapInfo *tokens.TxSwapInfo) error {
 	if !b.checkSwapValue(swapInfo.Value) {
 		return tokens.ErrTxWithWrongValue
 	}
-	dstBridge := tokens.GetCrossChainBridgeByChainID(swapInfo.ToChainID.String())
+	dstBridge := GetBridgeByChainID(swapInfo.ToChainID.String())
 	if !dstBridge.IsValidAddress(swapInfo.Bind) {
 		log.Debug("wrong bind address in router swap", "txid", swapInfo.Hash, "logIndex", swapInfo.LogIndex, "bind", swapInfo.Bind)
 		return tokens.ErrTxWithWrongMemo

@@ -11,6 +11,7 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 	"github.com/anyswap/CrossChain-Bridge/tokens/btc"
+	"github.com/anyswap/CrossChain-Bridge/tokens/router"
 	"github.com/btcsuite/btcd/txscript"
 	rpcjson "github.com/gorilla/rpc/v2/json2"
 )
@@ -362,7 +363,7 @@ func RegisterRouterSwap(fromChainID, txid string) (*MapIntResult, error) {
 	if err != nil {
 		return nil, newRPCInternalError(err)
 	}
-	bridge := tokens.GetCrossChainBridgeByChainID(chainID.String())
+	bridge := router.GetBridgeByChainID(chainID.String())
 	routerSwapper, ok := bridge.(tokens.RouterSwapper)
 	if !ok {
 		return nil, tokens.ErrRouterSwapNotSupport

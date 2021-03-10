@@ -8,6 +8,7 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/mongodb"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
+	"github.com/anyswap/CrossChain-Bridge/tokens/router"
 )
 
 var (
@@ -40,7 +41,7 @@ func findRouterSwapResultToReplace() ([]*mongodb.MgoSwapResult, error) {
 }
 
 func processRouterSwapReplace(res *mongodb.MgoSwapResult) error {
-	resBridge := tokens.GetCrossChainBridgeByChainID(res.ToChainID)
+	resBridge := router.GetBridgeByChainID(res.ToChainID)
 	chainCfg := resBridge.GetChainConfig()
 	waitTimeToReplace := chainCfg.WaitTimeToReplace
 	maxReplaceCount := chainCfg.MaxReplaceCount
@@ -75,7 +76,7 @@ func ReplaceRouterSwap(res *mongodb.MgoSwapResult, gasPriceStr string) error {
 		return err
 	}
 
-	resBridge := tokens.GetCrossChainBridgeByChainID(res.ToChainID)
+	resBridge := router.GetBridgeByChainID(res.ToChainID)
 	tokenCfg := resBridge.GetTokenConfig(res.ToChainID) // TODO
 
 	value, err := common.GetBigIntFromStr(res.Value)
@@ -144,7 +145,7 @@ func verifyReplaceSwap(res *mongodb.MgoSwapResult) (*mongodb.MgoSwap, error) {
 	if res.SwapHeight != 0 {
 		return nil, errors.New("swaptx with block height")
 	}
-	resBridge := tokens.GetCrossChainBridgeByChainID(res.ToChainID)
+	resBridge := router.GetBridgeByChainID(res.ToChainID)
 	txStat := getSwapTxStatus(resBridge, res)
 	if txStat != nil && txStat.BlockHeight > 0 {
 		return nil, errors.New("swaptx exist in chain")

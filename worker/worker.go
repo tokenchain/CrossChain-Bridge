@@ -3,7 +3,6 @@ package worker
 import (
 	"time"
 
-	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/rpc/client"
 	"github.com/anyswap/CrossChain-Bridge/tokens/bridge"
 )
@@ -16,11 +15,6 @@ func StartWork(isServer bool) {
 
 	client.InitHTTPClient()
 	bridge.InitCrossChainBridge(isServer)
-
-	if params.IsRouterSwap() {
-		StartRouterSwapWork(isServer)
-		return
-	}
 
 	go StartScanJob(isServer)
 	time.Sleep(interval)

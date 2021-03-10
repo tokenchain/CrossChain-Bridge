@@ -3,6 +3,7 @@ package swapapi
 import (
 	"github.com/anyswap/CrossChain-Bridge/mongodb"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
+	"github.com/anyswap/CrossChain-Bridge/tokens/router"
 )
 
 // ConvertMgoSwapToSwapInfo convert
@@ -47,7 +48,7 @@ func ConvertMgoSwapResultToSwapInfo(mr *mongodb.MgoSwapResult) *SwapInfo {
 		case uint32(tokens.SwapoutType):
 			latest = tokens.SrcLatestBlockHeight
 		case uint32(tokens.RouterSwapType):
-			latest, _ = tokens.GetCrossChainBridgeByChainID(mr.ToChainID).GetLatestBlockNumber()
+			latest, _ = router.GetBridgeByChainID(mr.ToChainID).GetLatestBlockNumber()
 		}
 		if latest > mr.SwapHeight {
 			confirmations = latest - mr.SwapHeight
