@@ -125,6 +125,11 @@ var (
 		Usage: "value can be swapin or swapout",
 		Value: "swapin",
 	}
+	// RunServerFlag --runserver
+	RunServerFlag = &cli.BoolFlag{
+		Name:  "runserver",
+		Usage: "run server if flag is set, or run oracle",
+	}
 )
 
 // SetLogger set log level, json format, color, rotate ...

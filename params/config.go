@@ -14,8 +14,6 @@ import (
 const (
 	defaultAPIPort      = 11556
 	defServerConfigFile = "config.toml"
-
-	routerSwapIdentifier = "routerswap"
 )
 
 var (
@@ -167,9 +165,4 @@ func IsAdmin(account string) bool {
 		}
 	}
 	return false
-}
-
-// IsRouterSwap is router swap
-func IsRouterSwap() bool {
-	return strings.EqualFold(GetIdentifier(), routerSwapIdentifier)
 }
