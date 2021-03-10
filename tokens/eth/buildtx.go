@@ -51,12 +51,12 @@ func (b *Bridge) BuildRawTransaction(args *tokens.BuildTxArgs) (rawTx interface{
 			args.From = tokenCfg.DcrmAddress // from
 		}
 		switch args.SwapType {
-		case tokens.RouterSwapType:
-			err = b.buildRouterSwapTxInput(args)
 		case tokens.SwapinType:
 			err = b.buildSwapinTxInput(args)
 		case tokens.SwapoutType:
 			err = b.buildSwapoutTxInput(args, tokenCfg)
+		default:
+			err = tokens.ErrSwapTypeNotSupported
 		}
 		if err != nil {
 			return nil, err

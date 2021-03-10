@@ -14,7 +14,7 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/rpc/client"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
-	"github.com/anyswap/CrossChain-Bridge/tokens/eth"
+	"github.com/anyswap/CrossChain-Bridge/tokens/router"
 	"github.com/anyswap/CrossChain-Bridge/tokens/tools"
 	"github.com/fsn-dev/fsn-go-sdk/efsn/common"
 	"github.com/fsn-dev/fsn-go-sdk/efsn/core/types"
@@ -275,9 +275,9 @@ func (scanner *routerSwapScanner) scanTransaction(tx *types.Transaction) {
 		}
 		logTopic := rlog.Topics[0].Bytes()
 		switch {
-		case bytes.Equal(logTopic, eth.LogAnySwapOutTopic):
-		case bytes.Equal(logTopic, eth.LogAnySwapTradeTokensForTokensTopic):
-		case bytes.Equal(logTopic, eth.LogAnySwapTradeTokensForNativeTopic):
+		case bytes.Equal(logTopic, router.LogAnySwapOutTopic):
+		case bytes.Equal(logTopic, router.LogAnySwapTradeTokensForTokensTopic):
+		case bytes.Equal(logTopic, router.LogAnySwapTradeTokensForNativeTopic):
 		default:
 			continue
 		}
