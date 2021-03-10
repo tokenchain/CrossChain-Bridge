@@ -5,6 +5,7 @@ import (
 
 	"github.com/anyswap/CrossChain-Bridge/mongodb"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
+	"github.com/anyswap/CrossChain-Bridge/tokens/router"
 )
 
 // MatchTx struct
@@ -149,7 +150,7 @@ func markSwapResultFailed(fromChainID, txid string, logIndex int) (err error) {
 	return err
 }
 
-func dcrmSignTransaction(bridge tokens.CrossChainBridge, rawTx interface{}, args *tokens.BuildTxArgs) (signedTx interface{}, txHash string, err error) {
+func dcrmSignTransaction(bridge *router.Bridge, rawTx interface{}, args *tokens.BuildTxArgs) (signedTx interface{}, txHash string, err error) {
 	maxRetryDcrmSignCount := 5
 	for i := 0; i < maxRetryDcrmSignCount; i++ {
 		signedTx, txHash, err = bridge.DcrmSignTransaction(rawTx, args.GetExtraArgs())
@@ -163,7 +164,7 @@ func dcrmSignTransaction(bridge tokens.CrossChainBridge, rawTx interface{}, args
 	return signedTx, txHash, nil
 }
 
-func sendSignedTransaction(bridge tokens.CrossChainBridge, signedTx interface{}, fromChainID, txid string, logIndex int, isReplace bool) (err error) {
+func sendSignedTransaction(bridge *router.Bridge, signedTx interface{}, fromChainID, txid string, logIndex int, isReplace bool) (err error) {
 	var (
 		txHash              string
 		retrySendTxCount    = 3
@@ -187,9 +188,7 @@ func sendSignedTransaction(bridge tokens.CrossChainBridge, signedTx interface{},
 		return err
 	}
 	if !isReplace {
-		if nonceSetter, ok := bridge.(tokens.NonceSetter); ok {
-			nonceSetter.IncreaseNonce(fromChainID, 1)
-		}
+		bridge.IncreaseNonce(fromChainID, 1)
 	}
 	return nil
 }

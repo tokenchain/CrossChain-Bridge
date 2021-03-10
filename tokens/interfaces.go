@@ -122,9 +122,3 @@ type NonceSetter interface {
 	AdjustNonce(pairID string, value uint64) (nonce uint64)
 	IncreaseNonce(pairID string, value uint64)
 }
-
-// RouterSwapper interface
-type RouterSwapper interface {
-	RegisterRouterSwapTx(txHash string) ([]*TxSwapInfo, []error)
-	VerifyRouterSwapTx(txHash string, logIndex int, allowUnstable bool) (*TxSwapInfo, error)
-}

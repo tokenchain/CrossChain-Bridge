@@ -7,7 +7,7 @@ import (
 
 // router bridges
 var (
-	RouterBridges map[string]tokens.CrossChainBridge // key is chainID
+	RouterBridges map[string]*Bridge // key is chainID
 )
 
 // Bridge eth bridge
@@ -26,7 +26,7 @@ func NewCrossChainBridge(isSrc bool) *Bridge {
 }
 
 // GetBridgeByChainID get bridge by chain id
-func GetBridgeByChainID(chainID string) tokens.CrossChainBridge {
+func GetBridgeByChainID(chainID string) *Bridge {
 	return RouterBridges[chainID]
 }
 

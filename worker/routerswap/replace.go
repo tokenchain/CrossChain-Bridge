@@ -151,17 +151,12 @@ func verifyReplaceSwap(res *mongodb.MgoSwapResult) (*mongodb.MgoSwap, error) {
 		return nil, errors.New("swaptx exist in chain")
 	}
 
-	nonceSetter, ok := resBridge.(tokens.NonceSetter)
-	if !ok {
-		return nil, errors.New("not nonce support resBridge")
-	}
-
 	pairID := res.PairID
 	tokenCfg := resBridge.GetTokenConfig(pairID) // TODO
 	if tokenCfg == nil {
 		return nil, fmt.Errorf("no token config for pairID '%v'", pairID)
 	}
-	nonce, err := nonceSetter.GetPoolNonce(tokenCfg.DcrmAddress, "latest")
+	nonce, err := resBridge.GetPoolNonce(tokenCfg.DcrmAddress, "latest")
 	if err != nil {
 		return nil, fmt.Errorf("get nonce failed, %v", err)
 	}

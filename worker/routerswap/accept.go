@@ -108,7 +108,7 @@ func verifySignInfo(signInfo *dcrm.SignInfoData) error {
 }
 
 func rebuildAndVerifyMsgHash(msgHash []string, args *tokens.BuildTxArgs) error {
-	var srcBridge, dstBridge tokens.CrossChainBridge
+	var srcBridge, dstBridge *router.Bridge
 	switch args.SwapType {
 	case tokens.RouterSwapType:
 		srcBridge = router.GetBridgeByChainID(args.FromChainID.String())
@@ -132,11 +132,7 @@ func rebuildAndVerifyMsgHash(msgHash []string, args *tokens.BuildTxArgs) error {
 
 	txid := args.SwapID
 	logIndex := args.LogIndex
-	routerSwapper, ok := srcBridge.(tokens.RouterSwapper)
-	if !ok {
-		return tokens.ErrRouterSwapNotSupport
-	}
-	swapInfo, err := routerSwapper.VerifyRouterSwapTx(txid, logIndex, false)
+	swapInfo, err := srcBridge.VerifyRouterSwapTx(txid, logIndex, false)
 	if err != nil {
 		logWorkerError("accept", "verifySignInfo failed", err, "fromChainID", args.FromChainID, "txid", txid, "logIndex", logIndex)
 		return err

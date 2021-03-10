@@ -41,7 +41,7 @@ func isTxOnChain(txStatus *tokens.TxStatus) bool {
 	return txStatus.Receipt != nil
 }
 
-func getSwapTxStatus(resBridge tokens.CrossChainBridge, swap *mongodb.MgoSwapResult) *tokens.TxStatus {
+func getSwapTxStatus(resBridge *router.Bridge, swap *mongodb.MgoSwapResult) *tokens.TxStatus {
 	txStatus := resBridge.GetTransactionStatus(swap.SwapTx)
 	if isTxOnChain(txStatus) {
 		return txStatus

@@ -50,16 +50,12 @@ func processRouterSwapVerify(swap *mongodb.MgoSwap) (err error) {
 	logIndex := swap.LogIndex
 
 	bridge := router.GetBridgeByChainID(fromChainID)
-	routerSwapper, ok := bridge.(tokens.RouterSwapper)
-	if !ok {
-		return tokens.ErrRouterSwapNotSupport
-	}
-	swapInfo, err := routerSwapper.VerifyRouterSwapTx(txid, logIndex, false)
+	swapInfo, err := bridge.VerifyRouterSwapTx(txid, logIndex, false)
 	if swapInfo == nil {
 		return err
 	}
 
-	if swapInfo.Height != 0 && swapInfo.Height < *bridge.GetChainConfig().InitialHeight {
+	if swapInfo.Height != 0 && swapInfo.Height < *bridge.ChainConfig.InitialHeight {
 		err = tokens.ErrTxBeforeInitialHeight
 		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxVerifyFailed, now(), err.Error())
 	}

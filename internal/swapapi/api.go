@@ -364,12 +364,8 @@ func RegisterRouterSwap(fromChainID, txid string) (*MapIntResult, error) {
 		return nil, newRPCInternalError(err)
 	}
 	bridge := router.GetBridgeByChainID(chainID.String())
-	routerSwapper, ok := bridge.(tokens.RouterSwapper)
-	if !ok {
-		return nil, tokens.ErrRouterSwapNotSupport
-	}
 	result := MapIntResult(make(map[int]string))
-	swapInfos, errs := routerSwapper.RegisterRouterSwapTx(txid)
+	swapInfos, errs := bridge.RegisterRouterSwapTx(txid)
 	for i, swapInfo := range swapInfos {
 		logIndex := swapInfo.LogIndex
 		err := errs[i]
