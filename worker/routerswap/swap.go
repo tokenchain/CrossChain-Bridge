@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"strings"
 	"sync"
 
 	"github.com/anyswap/CrossChain-Bridge/common"
@@ -20,27 +19,22 @@ var (
 	swapRingMaxSize = 1000
 
 	swapChanSize          = 10
-	routerSwapTaskChanMap = make(map[string]chan *tokens.BuildTxArgs)
+	routerSwapTaskChanMap = make(map[string]chan *tokens.BuildTxArgs) // key is chainID
 
 	errAlreadySwapped = errors.New("already swapped")
 )
 
 // StartSwapJob swap job
 func StartSwapJob() {
-	for _, pairCfg := range tokens.GetTokenPairsConfig() {
-		AddSwapJob(pairCfg)
-	}
-}
+	for _, bridge := range router.RouterBridges {
+		chainID := bridge.ChainConfig.ChainID
+		if _, exist := routerSwapTaskChanMap[chainID]; !exist {
+			routerSwapTaskChanMap[chainID] = make(chan *tokens.BuildTxArgs, swapChanSize)
+			go processSwapTask(routerSwapTaskChanMap[chainID])
+		}
 
-// AddSwapJob add swap job
-func AddSwapJob(pairCfg *tokens.TokenPairConfig) {
-	chainID := strings.ToLower(pairCfg.PairID)
-	if _, exist := routerSwapTaskChanMap[chainID]; !exist {
-		routerSwapTaskChanMap[chainID] = make(chan *tokens.BuildTxArgs, swapChanSize)
-		go processSwapTask(routerSwapTaskChanMap[chainID])
+		go startRouterSwapJob(chainID)
 	}
-
-	go startRouterSwapJob(chainID)
 }
 
 func startRouterSwapJob(chainID string) {
@@ -324,7 +318,7 @@ func doSwap(args *tokens.BuildTxArgs) (err error) {
 		return err
 	}
 
-	return sendSignedTransaction(resBridge, signedTx, chainID, txid, logIndex, false)
+	return sendSignedTransaction(resBridge, signedTx, args, false)
 }
 
 type swapInfo struct {

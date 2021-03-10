@@ -6,57 +6,30 @@ import (
 
 // NonceSetterBase base nonce setter
 type NonceSetterBase struct {
-	SwapinNonce  map[string]uint64
-	SwapoutNonce map[string]uint64
+	SwapNonce map[string]uint64 // key is sender address
 }
 
 // NewNonceSetterBase new base nonce setter
 func NewNonceSetterBase() *NonceSetterBase {
 	return &NonceSetterBase{
-		SwapinNonce:  make(map[string]uint64),
-		SwapoutNonce: make(map[string]uint64),
-	}
-}
-
-// SetNonce set nonce directly
-func (b *Bridge) SetNonce(pairID string, value uint64) {
-	tokenCfg := b.GetTokenConfig(pairID)
-	account := strings.ToLower(tokenCfg.DcrmAddress)
-	if b.IsSrcEndpoint() {
-		b.SwapoutNonce[account] = value
-	} else {
-		b.SwapinNonce[account] = value
+		SwapNonce: make(map[string]uint64),
 	}
 }
 
 // AdjustNonce adjust account nonce (eth like chain)
-func (b *Bridge) AdjustNonce(pairID string, value uint64) (nonce uint64) {
-	tokenCfg := b.GetTokenConfig(pairID)
-	account := strings.ToLower(tokenCfg.DcrmAddress)
-	nonce = value
-	if b.IsSrcEndpoint() {
-		if b.SwapoutNonce[account] > value {
-			nonce = b.SwapoutNonce[account]
-		} else {
-			b.SwapoutNonce[account] = value
-		}
+func (b *Bridge) AdjustNonce(address string, value uint64) (nonce uint64) {
+	account := strings.ToLower(address)
+	if b.SwapNonce[account] > value {
+		nonce = b.SwapNonce[account]
 	} else {
-		if b.SwapinNonce[account] > value {
-			nonce = b.SwapinNonce[account]
-		} else {
-			b.SwapinNonce[account] = value
-		}
+		b.SwapNonce[account] = value
+		nonce = value
 	}
 	return nonce
 }
 
 // IncreaseNonce decrease account nonce (eth like chain)
-func (b *Bridge) IncreaseNonce(pairID string, value uint64) {
-	tokenCfg := b.GetTokenConfig(pairID)
-	account := strings.ToLower(tokenCfg.DcrmAddress)
-	if b.IsSrcEndpoint() {
-		b.SwapoutNonce[account] += value
-	} else {
-		b.SwapinNonce[account] += value
-	}
+func (b *Bridge) IncreaseNonce(address string, value uint64) {
+	account := strings.ToLower(address)
+	b.SwapNonce[account] += value
 }

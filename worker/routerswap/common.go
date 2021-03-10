@@ -164,7 +164,7 @@ func dcrmSignTransaction(bridge *router.Bridge, rawTx interface{}, args *tokens.
 	return signedTx, txHash, nil
 }
 
-func sendSignedTransaction(bridge *router.Bridge, signedTx interface{}, fromChainID, txid string, logIndex int, isReplace bool) (err error) {
+func sendSignedTransaction(bridge *router.Bridge, signedTx interface{}, args *tokens.BuildTxArgs, isReplace bool) (err error) {
 	var (
 		txHash              string
 		retrySendTxCount    = 3
@@ -182,13 +182,14 @@ func sendSignedTransaction(bridge *router.Bridge, signedTx interface{}, fromChai
 		time.Sleep(retrySendTxInterval)
 	}
 	if err != nil {
-		logWorkerError("sendtx", "update router swap status to TxSwapFailed", err, "txid", txid)
+		fromChainID, txid, logIndex := args.FromChainID.String(), args.SwapID, args.LogIndex
 		_ = mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxSwapFailed, now(), err.Error())
 		_ = mongodb.UpdateRouterSwapResultStatus(fromChainID, txid, logIndex, mongodb.TxSwapFailed, now(), err.Error())
+		logWorkerError("sendtx", "update router swap status to TxSwapFailed", err, "txid", txid)
 		return err
 	}
 	if !isReplace {
-		bridge.IncreaseNonce(fromChainID, 1)
+		bridge.IncreaseNonce(args.From, 1)
 	}
 	return nil
 }

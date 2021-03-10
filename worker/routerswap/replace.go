@@ -127,7 +127,7 @@ func ReplaceRouterSwap(res *mongodb.MgoSwapResult, gasPriceStr string) error {
 	if err != nil {
 		return err
 	}
-	return sendSignedTransaction(resBridge, signedTx, fromChainID, txid, logIndex, true)
+	return sendSignedTransaction(resBridge, signedTx, args, true)
 }
 
 func verifyReplaceSwap(res *mongodb.MgoSwapResult) (*mongodb.MgoSwap, error) {

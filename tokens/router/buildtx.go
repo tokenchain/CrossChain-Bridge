@@ -98,7 +98,7 @@ func (b *Bridge) setDefaults(args *tokens.BuildTxArgs) (extra *tokens.EthExtraAr
 		}
 	}
 	if extra.Nonce == nil {
-		extra.Nonce, err = b.getAccountNonce(args.PairID, args.From)
+		extra.Nonce, err = b.getAccountNonce(args.From)
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +158,7 @@ func (b *Bridge) adjustSwapGasPrice(pairID string, extra *tokens.EthExtraArgs) e
 	return nil
 }
 
-func (b *Bridge) getAccountNonce(pairID, from string) (nonceptr *uint64, err error) {
+func (b *Bridge) getAccountNonce(from string) (nonceptr *uint64, err error) {
 	var nonce uint64
 	for i := 0; i < retryRPCCount; i++ {
 		nonce, err = b.GetPoolNonce(from, "pending")
@@ -170,10 +170,7 @@ func (b *Bridge) getAccountNonce(pairID, from string) (nonceptr *uint64, err err
 	if err != nil {
 		return nil, err
 	}
-	tokenCfg := b.GetTokenConfig(pairID)
-	if tokenCfg != nil && from == tokenCfg.DcrmAddress {
-		nonce = b.AdjustNonce(pairID, nonce)
-	}
+	nonce = b.AdjustNonce(from, nonce)
 	return &nonce, nil
 }
 
