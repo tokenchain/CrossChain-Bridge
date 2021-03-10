@@ -16,9 +16,25 @@ const (
 	RouterSwapIdentifier = "routerswap"
 )
 
+var (
+	routerConfig *RouterConfig
+)
+
+// RouterConfig config
+type RouterConfig struct {
+	Identifier string
+	Onchain    *OnchainConfig `toml:",omitempty" json:",omitempty"`
+	Dcrm       *DcrmConfig    `toml:",omitempty" json:",omitempty"`
+
+	// only for server
+	Admins    []string         `toml:",omitempty" json:",omitempty"`
+	MongoDB   *MongoDBConfig   `toml:",omitempty" json:",omitempty"`
+	APIServer *APIServerConfig `toml:",omitempty" json:",omitempty"`
+}
+
 // OnchainConfig struct
 type OnchainConfig struct {
-	Gateway  tokens.GatewayConfig
+	Gateway  *tokens.GatewayConfig
 	Contract string
 }
 
@@ -43,17 +59,16 @@ func IsRouterSwap() bool {
 }
 
 // LoadRouterConfig load router swap config
-func LoadRouterConfig(configFile string, isServer bool) *ServerConfig {
+func LoadRouterConfig(configFile string, isServer bool) *RouterConfig {
 	log.Info("load router config file", "configFile", configFile, "isServer", isServer)
 	if !common.FileExist(configFile) {
 		log.Fatalf("LoadRouterConfig error: config file '%v' not exist", configFile)
 	}
-	config := &ServerConfig{}
+	config := &RouterConfig{}
 	if _, err := toml.DecodeFile(configFile, &config); err != nil {
 		log.Fatalf("LoadRouterConfig error (toml DecodeFile): %v", err)
 	}
 
-	SetConfig(config)
 	var bs []byte
 	if log.JSONFormat {
 		bs, _ = json.Marshal(config)
@@ -61,8 +76,10 @@ func LoadRouterConfig(configFile string, isServer bool) *ServerConfig {
 		bs, _ = json.MarshalIndent(config, "", "  ")
 	}
 	log.Println("LoadRouterConfig finished.", string(bs))
-	if err := CheckConfig(isServer); err != nil {
+	if err := config.CheckConfig(isServer); err != nil {
 		log.Fatalf("Check config failed. %v", err)
 	}
-	return serverConfig
+
+	routerConfig = config
+	return routerConfig
 }
