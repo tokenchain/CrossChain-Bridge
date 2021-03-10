@@ -92,15 +92,11 @@ func processRouterSwap(swap *mongodb.MgoSwap) (err error) {
 
 	logWorker("swap", "start process router swap", "chainID", chainID, "txid", txid, "logIndex", logIndex, "status", swap.Status, "value", res.Value)
 
-	fromTokenCfg, toTokenCfg := tokens.GetTokenConfigsByDirection(chainID, true) // TODO
-	if fromTokenCfg == nil || toTokenCfg == nil {
-		logWorkerTrace("swap", "swap is not configed", "chainID", chainID, "txid", txid)
-		return nil
+	dstBridge := router.GetBridgeByChainID(swap.ToChainID)
+	if err != nil {
+		return err
 	}
-	if fromTokenCfg.DisableSwap {
-		logWorkerTrace("swap", "swap is disabled", "chainID", chainID, "txid", txid)
-		return nil
-	}
+
 	isBlacked, err := isSwapInBlacklist(res)
 	if err != nil {
 		return err
@@ -130,7 +126,7 @@ func processRouterSwap(swap *mongodb.MgoSwap) (err error) {
 			TxType:   tokens.SwapTxType(swap.TxType),
 			Bind:     bind,
 		},
-		From:        toTokenCfg.DcrmAddress,
+		From:        dstBridge.ChainConfig.RouterMPC,
 		OriginValue: value,
 	}
 	args.RouterSwapInfo, err = getRouterSwapInfoFromSwap(swap)
@@ -206,9 +202,10 @@ func processHistory(res *mongodb.MgoSwapResult) error {
 	}
 	resBridge := router.GetBridgeByChainID(res.ToChainID)
 	if _, err := resBridge.GetTransaction(history.matchTx); err == nil {
+		srcBridge := router.GetBridgeByChainID(res.FromChainID)
 		matchTx := &MatchTx{
 			SwapTx:    history.matchTx,
-			SwapValue: tokens.CalcSwappedValue(chainID, history.value, true).String(), // TODO
+			SwapValue: srcBridge.CalcSwapValue(res.Token, history.value).String(),
 			SwapNonce: history.nonce,
 		}
 		_ = updateRouterSwapResult(chainID, txid, logIndex, matchTx)
@@ -251,7 +248,10 @@ func doSwap(args *tokens.BuildTxArgs) (err error) {
 	logIndex := args.LogIndex
 	originValue := args.OriginValue
 
-	resBridge := router.GetBridgeByChainID(args.ToChainID.String())
+	srcBridge, resBridge, err := getBridges(chainID, args.ToChainID.String())
+	if err != nil {
+		return err
+	}
 
 	res, err := mongodb.FindRouterSwapResult(chainID, txid, logIndex)
 	if err != nil {
@@ -270,14 +270,7 @@ func doSwap(args *tokens.BuildTxArgs) (err error) {
 		return err
 	}
 
-	var signedTx interface{}
-	var txHash string
-	tokenCfg := resBridge.GetTokenConfig(chainID)
-	if tokenCfg.GetDcrmAddressPrivateKey() != nil {
-		signedTx, txHash, err = resBridge.SignTransaction(rawTx, chainID)
-	} else {
-		signedTx, txHash, err = dcrmSignTransaction(resBridge, rawTx, args.GetExtraArgs())
-	}
+	signedTx, txHash, err := dcrmSignTransaction(resBridge, rawTx, args.GetExtraArgs())
 	if err != nil {
 		logWorkerError("doSwap", "sign tx failed", err, "chainID", chainID, "txid", txid, "logIndex", logIndex)
 		return err
@@ -303,7 +296,7 @@ func doSwap(args *tokens.BuildTxArgs) (err error) {
 	matchTx := &MatchTx{
 		SwapTx:     txHash,
 		OldSwapTxs: oldSwapTxs,
-		SwapValue:  tokens.CalcSwappedValue(chainID, originValue, true).String(), // TODO
+		SwapValue:  srcBridge.CalcSwapValue(args.Token, originValue).String(),
 		SwapNonce:  swapTxNonce,
 	}
 	err = updateRouterSwapResult(chainID, txid, logIndex, matchTx)

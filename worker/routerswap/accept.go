@@ -98,7 +98,7 @@ func verifySignInfo(signInfo *dcrm.SignInfoData) error {
 		return errWrongMsgContext
 	}
 	switch args.Identifier {
-	case params.GetIdentifier():
+	case params.RouterSwapIdentifier:
 	case tokens.ReplaceSwapIdentifier:
 	default:
 		return errIdentifierMismatch
@@ -107,27 +107,25 @@ func verifySignInfo(signInfo *dcrm.SignInfoData) error {
 	return rebuildAndVerifyMsgHash(msgHash, &args)
 }
 
-func rebuildAndVerifyMsgHash(msgHash []string, args *tokens.BuildTxArgs) error {
+func getBridges(fromChainID, toChainID string) (srcBridge, dstBridge *router.Bridge, err error) {
+	srcBridge = router.GetBridgeByChainID(fromChainID)
+	dstBridge = router.GetBridgeByChainID(toChainID)
+	if srcBridge == nil || dstBridge == nil {
+		err = tokens.ErrNoBridgeForChainID
+	}
+	return
+}
+
+func rebuildAndVerifyMsgHash(msgHash []string, args *tokens.BuildTxArgs) (err error) {
 	var srcBridge, dstBridge *router.Bridge
 	switch args.SwapType {
 	case tokens.RouterSwapType:
-		srcBridge = router.GetBridgeByChainID(args.FromChainID.String())
-		dstBridge = router.GetBridgeByChainID(args.ToChainID.String())
-		if srcBridge == nil || dstBridge == nil {
-			if srcBridge == nil {
-				logWorkerTrace("accept", "no bridge for chain id", "chainID", args.FromChainID)
-			} else {
-				logWorkerTrace("accept", "no bridge for chain id", "chainID", args.ToChainID)
-			}
-			return tokens.ErrNoBridgeForChainID
+		srcBridge, dstBridge, err = getBridges(args.FromChainID.String(), args.ToChainID.String())
+		if err != nil {
+			return err
 		}
 	default:
 		return fmt.Errorf("unknown swap type %v", args.SwapType)
-	}
-
-	tokenCfg := dstBridge.GetTokenConfig(args.PairID)
-	if tokenCfg == nil {
-		return tokens.ErrUnknownPairID
 	}
 
 	txid := args.SwapID
@@ -140,7 +138,7 @@ func rebuildAndVerifyMsgHash(msgHash []string, args *tokens.BuildTxArgs) error {
 
 	buildTxArgs := &tokens.BuildTxArgs{
 		SwapInfo:    args.SwapInfo,
-		From:        tokenCfg.DcrmAddress,
+		From:        dstBridge.ChainConfig.RouterMPC,
 		OriginValue: swapInfo.Value,
 		Extra:       args.Extra,
 	}

@@ -1,7 +1,6 @@
 package router
 
 import (
-	"github.com/anyswap/CrossChain-Bridge/tokens"
 	"github.com/anyswap/CrossChain-Bridge/types"
 )
 
@@ -12,15 +11,15 @@ var (
 
 // Bridge eth bridge
 type Bridge struct {
-	*tokens.CrossChainBridgeBase
+	*CrossChainBridgeBase
 	*NonceSetterBase
 	Signer types.Signer
 }
 
 // NewCrossChainBridge new bridge
-func NewCrossChainBridge(isSrc bool) *Bridge {
+func NewCrossChainBridge() *Bridge {
 	return &Bridge{
-		CrossChainBridgeBase: tokens.NewCrossChainBridgeBase(isSrc),
+		CrossChainBridgeBase: NewCrossChainBridgeBase(),
 		NonceSetterBase:      NewNonceSetterBase(),
 	}
 }

@@ -43,6 +43,7 @@ var (
 	ErrBindAddressMismatch  = errors.New("bind address mismatch")
 	ErrTxWithoutReceipt     = errors.New("tx without receipt")
 	ErrTxWithWrongReceipt   = errors.New("tx with wrong receipt")
+	ErrMissTokenConfig      = errors.New("miss token config")
 
 	// errors should register
 	ErrTxWithWrongMemo       = errors.New("tx with wrong memo")

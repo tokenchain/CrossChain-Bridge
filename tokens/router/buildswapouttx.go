@@ -36,7 +36,7 @@ func (b *Bridge) buildRouterSwapTxInput(args *tokens.BuildTxArgs) (err error) {
 }
 
 func (b *Bridge) buildRouterSwapoutTxInput(args *tokens.BuildTxArgs) (err error) {
-	token, receiver, amount, err := b.checkSwapoutReceiverAndAmount(args)
+	token, receiver, amount, err := getReceiverAndAmount(args)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (b *Bridge) buildRouterSwapoutTxInput(args *tokens.BuildTxArgs) (err error)
 }
 
 func (b *Bridge) buildRouterSwapTradeTxInput(args *tokens.BuildTxArgs) (err error) {
-	token, receiver, amount, err := b.checkSwapoutReceiverAndAmount(args)
+	token, receiver, amount, err := getReceiverAndAmount(args)
 	if err != nil {
 		return err
 	}
@@ -81,19 +81,18 @@ func (b *Bridge) buildRouterSwapTradeTxInput(args *tokens.BuildTxArgs) (err erro
 	return b.checkBalance(token.ContractAddress, token.DcrmAddress, amount)
 }
 
-func (b *Bridge) checkSwapoutReceiverAndAmount(args *tokens.BuildTxArgs) (
-	token *tokens.TokenConfig, receiver common.Address, amount *big.Int, err error) {
-	pairID := args.PairID
-	token = b.GetTokenConfig(pairID)
+func getReceiverAndAmount(args *tokens.BuildTxArgs) (token *tokens.TokenConfig, receiver common.Address, amount *big.Int, err error) {
+	fromBridge := GetBridgeByChainID(args.FromChainID.String())
+	token = fromBridge.GetTokenConfig(args.Token)
 	if token == nil {
-		return token, receiver, amount, tokens.ErrUnknownPairID
+		return token, receiver, amount, tokens.ErrMissTokenConfig
 	}
 	receiver = common.HexToAddress(args.Bind)
 	if receiver == (common.Address{}) || !common.IsHexAddress(args.Bind) {
 		log.Warn("swapout to wrong receiver", "receiver", args.Bind)
 		return token, receiver, amount, errors.New("can not swapout to empty or invalid receiver")
 	}
-	amount = tokens.CalcSwappedValue(pairID, args.OriginValue, false)
+	amount = tokens.CalcSwapValue(token, args.OriginValue)
 	return token, receiver, amount, nil
 }
 

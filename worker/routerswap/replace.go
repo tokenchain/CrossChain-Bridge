@@ -77,7 +77,9 @@ func ReplaceRouterSwap(res *mongodb.MgoSwapResult, gasPriceStr string) error {
 	}
 
 	resBridge := router.GetBridgeByChainID(res.ToChainID)
-	tokenCfg := resBridge.GetTokenConfig(res.ToChainID) // TODO
+	if resBridge == nil {
+		return tokens.ErrNoBridgeForChainID
+	}
 
 	value, err := common.GetBigIntFromStr(res.Value)
 	if err != nil {
@@ -94,7 +96,7 @@ func ReplaceRouterSwap(res *mongodb.MgoSwapResult, gasPriceStr string) error {
 			TxType:     tokens.SwapTxType(swap.TxType),
 			Bind:       res.Bind,
 		},
-		From:        tokenCfg.DcrmAddress,
+		From:        resBridge.ChainConfig.RouterMPC,
 		OriginValue: value,
 		Extra: &tokens.AllExtras{
 			EthExtra: &tokens.EthExtraArgs{
@@ -112,13 +114,7 @@ func ReplaceRouterSwap(res *mongodb.MgoSwapResult, gasPriceStr string) error {
 		logWorkerError("replaceSwap", "build tx failed", err, "fromChainID", fromChainID, "toChainID", res.ToChainID, "txid", txid, "logIndex", logIndex)
 		return err
 	}
-	var signedTx interface{}
-	var txHash string
-	if tokenCfg.GetDcrmAddressPrivateKey() != nil {
-		signedTx, txHash, err = resBridge.SignTransaction(rawTx, res.PairID)
-	} else {
-		signedTx, txHash, err = dcrmSignTransaction(resBridge, rawTx, args.GetExtraArgs())
-	}
+	signedTx, txHash, err := dcrmSignTransaction(resBridge, rawTx, args.GetExtraArgs())
 	if err != nil {
 		return err
 	}
@@ -146,17 +142,16 @@ func verifyReplaceSwap(res *mongodb.MgoSwapResult) (*mongodb.MgoSwap, error) {
 		return nil, errors.New("swaptx with block height")
 	}
 	resBridge := router.GetBridgeByChainID(res.ToChainID)
+	if resBridge == nil {
+		return nil, tokens.ErrNoBridgeForChainID
+	}
 	txStat := getSwapTxStatus(resBridge, res)
 	if txStat != nil && txStat.BlockHeight > 0 {
 		return nil, errors.New("swaptx exist in chain")
 	}
 
-	pairID := res.PairID
-	tokenCfg := resBridge.GetTokenConfig(pairID) // TODO
-	if tokenCfg == nil {
-		return nil, fmt.Errorf("no token config for pairID '%v'", pairID)
-	}
-	nonce, err := resBridge.GetPoolNonce(tokenCfg.DcrmAddress, "latest")
+	mpc := resBridge.ChainConfig.RouterMPC
+	nonce, err := resBridge.GetPoolNonce(mpc, "latest")
 	if err != nil {
 		return nil, fmt.Errorf("get nonce failed, %v", err)
 	}

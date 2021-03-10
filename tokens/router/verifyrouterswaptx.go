@@ -2,12 +2,10 @@ package router
 
 import (
 	"bytes"
-	"math/big"
 	"strings"
 
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/log"
-	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 	"github.com/anyswap/CrossChain-Bridge/types"
 )
@@ -110,7 +108,11 @@ func (b *Bridge) VerifyRouterSwapTx(txHash string, logIndex int, allowUnstable b
 }
 
 func (b *Bridge) checkRouterSwapInfo(swapInfo *tokens.TxSwapInfo) error {
-	if !b.checkSwapValue(swapInfo.Value) {
+	tokenCfg := b.GetTokenConfig(swapInfo.Token)
+	if tokenCfg == nil {
+		return tokens.ErrMissTokenConfig
+	}
+	if !tokens.CheckTokenSwapValue(tokenCfg, swapInfo.Value) {
 		return tokens.ErrTxWithWrongValue
 	}
 	dstBridge := GetBridgeByChainID(swapInfo.ToChainID.String())
@@ -119,12 +121,6 @@ func (b *Bridge) checkRouterSwapInfo(swapInfo *tokens.TxSwapInfo) error {
 		return tokens.ErrTxWithWrongMemo
 	}
 	return nil
-}
-
-func (b *Bridge) checkSwapValue(value *big.Int) bool {
-	chainID := b.ChainConfig.GetChainID()
-	token := params.GetTokenConfig(chainID)
-	return tokens.CheckTokenSwapValue(token, value)
 }
 
 func (b *Bridge) verifyRouterSwapTxReceipt(swapInfo *tokens.TxSwapInfo, receipt *types.RPCTxReceipt) (err error) {

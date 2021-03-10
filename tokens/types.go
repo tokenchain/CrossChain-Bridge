@@ -40,6 +40,7 @@ type ChainConfig struct {
 	MaxReplaceCount         int
 
 	RouterContract     string `json:",omitempty"`
+	RouterMPC          string `json:",omitempty"`
 	SwapDeadlineOffset int64  `json:",omitempty"` // seconds
 
 	chainID *big.Int
@@ -387,6 +388,11 @@ func (c *TokenConfig) CalcAndStoreValue() {
 	c.maxSwapFee = ToBits(*c.MaximumSwapFee, *c.Decimals)
 	c.minSwapFee = ToBits(*c.MinimumSwapFee, *c.Decimals)
 	c.bigValThreshhold = ToBits(*c.BigValueThreshold+0.0001, *c.Decimals)
+}
+
+// GetBigValueThreshold get big vaule threshold
+func (c *TokenConfig) GetBigValueThreshold() *big.Int {
+	return c.bigValThreshhold
 }
 
 // GetDcrmAddressPrivateKey get private key

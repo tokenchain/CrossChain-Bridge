@@ -67,10 +67,10 @@ func processRouterSwapVerify(swap *mongodb.MgoSwap) (err error) {
 		err = tokens.ErrAddressIsInBlacklist
 		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.SwapInBlacklist, now(), err.Error())
 	}
-	return updateSwapStatus(fromChainID, txid, logIndex, swapInfo, err)
+	return updateSwapStatus(bridge, fromChainID, txid, logIndex, swapInfo, err)
 }
 
-func updateSwapStatus(fromChainID, txid string, logIndex int, swapInfo *tokens.TxSwapInfo, err error) error {
+func updateSwapStatus(bridge *router.Bridge, fromChainID, txid string, logIndex int, swapInfo *tokens.TxSwapInfo, err error) error {
 	resultStatus := mongodb.MatchTxEmpty
 
 	switch err {
@@ -78,7 +78,7 @@ func updateSwapStatus(fromChainID, txid string, logIndex int, swapInfo *tokens.T
 		return err
 	case nil:
 		status := mongodb.TxNotSwapped
-		if swapInfo.Value.Cmp(tokens.GetBigValueThreshold(fromChainID, true)) > 0 { // TODO
+		if swapInfo.Value.Cmp(bridge.GetBigValueThreshold(swapInfo.Token)) > 0 {
 			status = mongodb.TxWithBigValue
 			resultStatus = mongodb.TxWithBigValue
 		}

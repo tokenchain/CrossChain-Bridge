@@ -21,7 +21,7 @@ const (
 	retryGetSignStatusInterval = 10 * time.Second
 )
 
-func (b *Bridge) verifyTransactionWithArgs(rawTx interface{}, args *tokens.BuildTxArgs) (*types.Transaction, error) {
+func (b *Bridge) verifyTransactionReceiver(rawTx interface{}) (*types.Transaction, error) {
 	tx, ok := rawTx.(*types.Transaction)
 	if !ok {
 		return nil, errors.New("wrong raw tx param")
@@ -29,14 +29,7 @@ func (b *Bridge) verifyTransactionWithArgs(rawTx interface{}, args *tokens.Build
 	if tx.To() == nil || *tx.To() == (common.Address{}) {
 		return nil, fmt.Errorf("[sign] verify tx receiver failed")
 	}
-	tokenCfg := b.GetTokenConfig(args.PairID)
-	if tokenCfg == nil {
-		return nil, fmt.Errorf("[sign] verify tx with unknown pairID '%v'", args.PairID)
-	}
-	checkReceiver := tokenCfg.ContractAddress
-	if args.SwapType == tokens.SwapoutType && !tokenCfg.IsErc20() {
-		checkReceiver = args.Bind
-	}
+	checkReceiver := b.ChainConfig.RouterContract
 	if !strings.EqualFold(tx.To().String(), checkReceiver) {
 		return nil, fmt.Errorf("[sign] verify tx receiver failed")
 	}
@@ -45,7 +38,7 @@ func (b *Bridge) verifyTransactionWithArgs(rawTx interface{}, args *tokens.Build
 
 // DcrmSignTransaction dcrm sign raw tx
 func (b *Bridge) DcrmSignTransaction(rawTx interface{}, args *tokens.BuildTxArgs) (signTx interface{}, txHash string, err error) {
-	tx, err := b.verifyTransactionWithArgs(rawTx, args)
+	tx, err := b.verifyTransactionReceiver(rawTx)
 	if err != nil {
 		return nil, "", err
 	}
@@ -106,10 +99,9 @@ func (b *Bridge) DcrmSignTransaction(rawTx interface{}, args *tokens.BuildTxArgs
 		return nil, "", err
 	}
 
-	pairID := args.PairID
-	token := b.GetTokenConfig(pairID)
-	if sender.String() != token.DcrmAddress {
-		log.Error("DcrmSignTransaction verify sender failed", "have", sender.String(), "want", token.DcrmAddress)
+	checkSender := b.ChainConfig.RouterMPC
+	if !strings.EqualFold(sender.String(), checkSender) {
+		log.Error("DcrmSignTransaction verify sender failed", "have", sender.String(), "want", checkSender)
 		return nil, "", errors.New("wrong sender address")
 	}
 	txHash = signedTx.Hash().String()
@@ -118,8 +110,8 @@ func (b *Bridge) DcrmSignTransaction(rawTx interface{}, args *tokens.BuildTxArgs
 }
 
 // SignTransaction sign tx with pairID
-func (b *Bridge) SignTransaction(rawTx interface{}, pairID string) (signTx interface{}, txHash string, err error) {
-	privKey := b.GetTokenConfig(pairID).GetDcrmAddressPrivateKey()
+func (b *Bridge) SignTransaction(rawTx interface{}, token string) (signTx interface{}, txHash string, err error) {
+	privKey := b.GetTokenConfig(token).GetDcrmAddressPrivateKey()
 	return b.SignTransactionWithPrivateKey(rawTx, privKey)
 }
 
