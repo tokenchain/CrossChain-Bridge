@@ -95,10 +95,21 @@ type CrossChainBridge interface {
 
 	GetLatestBlockNumber() (uint64, error)
 	GetLatestBlockNumberOf(apiAddress string) (uint64, error)
+}
 
+// ScanChainSupport interface
+type ScanChainSupport interface {
 	StartChainTransactionScanJob()
 	StartPoolTransactionScanJob()
+}
 
+// ScanHistorySupport interface
+type ScanHistorySupport interface {
+	StartSwapHistoryScanJob()
+}
+
+// BalanceGetter interface
+type BalanceGetter interface {
 	GetBalance(accountAddress string) (*big.Int, error)
 	GetTokenBalance(tokenType, tokenAddress, accountAddress string) (*big.Int, error)
 	GetTokenSupply(tokenType, tokenAddress string) (*big.Int, error)
