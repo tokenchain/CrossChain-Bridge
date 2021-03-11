@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/anyswap/CrossChain-Bridge/admin"
 	"github.com/anyswap/CrossChain-Bridge/cmd/utils"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/urfave/cli/v2"
@@ -18,7 +19,7 @@ var (
 maintain service, open or close deposit and withdraw.
 pairIDs must be comma separated. pairIDs can be 'all'.
 `,
-		Flags: commonAdminFlags,
+		Flags: admin.CommonFlags,
 	}
 )
 
@@ -31,7 +32,7 @@ func maintain(ctx *cli.Context) error {
 		return fmt.Errorf("invalid arguments: %q", ctx.Args())
 	}
 
-	err := prepare(ctx)
+	err := admin.Prepare(ctx)
 	if err != nil {
 		return err
 	}
@@ -55,7 +56,7 @@ func maintain(ctx *cli.Context) error {
 	log.Printf("admin maintain: %v %v %v", operation, direction, pairID)
 
 	params := []string{operation, direction, pairID}
-	result, err := adminCall(method, params)
+	result, err := admin.SwapAdmin(method, params)
 
 	log.Printf("result is '%v'", result)
 	return err

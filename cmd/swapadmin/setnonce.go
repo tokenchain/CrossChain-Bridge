@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/anyswap/CrossChain-Bridge/admin"
 	"github.com/anyswap/CrossChain-Bridge/cmd/utils"
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/log"
@@ -20,7 +21,7 @@ admin swap nonce,
 swapin nonce is on destination blockchain,
 swapout nonce is on source blockchain.
 `,
-		Flags: commonAdminFlags,
+		Flags: admin.CommonFlags,
 	}
 )
 
@@ -33,7 +34,7 @@ func setnonce(ctx *cli.Context) error {
 		return fmt.Errorf("invalid arguments: %q", ctx.Args())
 	}
 
-	err := prepare(ctx)
+	err := admin.Prepare(ctx)
 	if err != nil {
 		return err
 	}
@@ -56,7 +57,7 @@ func setnonce(ctx *cli.Context) error {
 	log.Printf("admin setnonce: %v %v %v", operation, nonce, pairID)
 
 	params := []string{operation, nonce, pairID}
-	result, err := adminCall(method, params)
+	result, err := admin.SwapAdmin(method, params)
 
 	log.Printf("result is '%v'", result)
 	return err

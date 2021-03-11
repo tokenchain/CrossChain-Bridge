@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/anyswap/CrossChain-Bridge/admin"
 	"github.com/anyswap/CrossChain-Bridge/cmd/utils"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/urfave/cli/v2"
@@ -17,7 +18,7 @@ var (
 		Description: `
 admin blacklist
 `,
-		Flags: commonAdminFlags,
+		Flags: admin.CommonFlags,
 	}
 )
 
@@ -30,7 +31,7 @@ func blacklist(ctx *cli.Context) error {
 		return fmt.Errorf("invalid arguments: %q", ctx.Args())
 	}
 
-	err := prepare(ctx)
+	err := admin.Prepare(ctx)
 	if err != nil {
 		return err
 	}
@@ -48,7 +49,7 @@ func blacklist(ctx *cli.Context) error {
 	log.Printf("admin blacklist: %v %v %v", operation, address, pairID)
 
 	params := []string{operation, address, pairID}
-	result, err := adminCall(method, params)
+	result, err := admin.SwapAdmin(method, params)
 
 	log.Printf("result is '%v'", result)
 	return err

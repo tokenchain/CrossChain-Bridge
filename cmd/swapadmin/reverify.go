@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/anyswap/CrossChain-Bridge/admin"
 	"github.com/anyswap/CrossChain-Bridge/cmd/utils"
 	"github.com/urfave/cli/v2"
 )
@@ -16,7 +17,7 @@ var (
 		Description: `
 admin reverify swap
 `,
-		Flags: commonAdminFlags,
+		Flags: admin.CommonFlags,
 	}
 )
 

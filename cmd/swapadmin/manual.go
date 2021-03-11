@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/anyswap/CrossChain-Bridge/admin"
 	"github.com/anyswap/CrossChain-Bridge/cmd/utils"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/urfave/cli/v2"
@@ -24,7 +25,7 @@ var (
 		Description: `
 manual manage swap, pass or fail swap directly. memo is optional message for the reasons.
 `,
-		Flags: commonAdminFlags,
+		Flags: admin.CommonFlags,
 	}
 )
 
@@ -37,7 +38,7 @@ func manual(ctx *cli.Context) error {
 		return fmt.Errorf("invalid arguments: %q", ctx.Args())
 	}
 
-	err := prepare(ctx)
+	err := admin.Prepare(ctx)
 	if err != nil {
 		return err
 	}
@@ -64,7 +65,7 @@ func manual(ctx *cli.Context) error {
 	if memo != "" {
 		params = append(params, memo)
 	}
-	result, err := adminCall(method, params)
+	result, err := admin.SwapAdmin(method, params)
 
 	log.Printf("result is '%v'", result)
 	return err

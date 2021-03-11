@@ -1,26 +1,27 @@
-package main
+package admin
 
 import (
 	"errors"
 
-	"github.com/anyswap/CrossChain-Bridge/admin"
 	"github.com/anyswap/CrossChain-Bridge/cmd/utils"
 	"github.com/anyswap/CrossChain-Bridge/rpc/client"
 	"github.com/urfave/cli/v2"
 )
 
+// common flags
 var (
 	swapServer string
 
-	commonAdminFlags = []cli.Flag{
+	CommonFlags = []cli.Flag{
 		utils.SwapServerFlag,
 		utils.KeystoreFileFlag,
 		utils.PasswordFileFlag,
 	}
 )
 
-func adminCall(method string, params []string) (result interface{}, err error) {
-	rawTx, err := admin.Sign(method, params)
+// SwapAdmin rpc call server `swap.AdminCall`
+func SwapAdmin(method string, params []string) (result interface{}, err error) {
+	rawTx, err := Sign(method, params)
 	if err != nil {
 		return "", err
 	}
@@ -31,7 +32,7 @@ func adminCall(method string, params []string) (result interface{}, err error) {
 func loadKeyStore(ctx *cli.Context) error {
 	keyfile := ctx.String(utils.KeystoreFileFlag.Name)
 	passfile := ctx.String(utils.PasswordFileFlag.Name)
-	return admin.LoadKeyStore(keyfile, passfile)
+	return LoadKeyStore(keyfile, passfile)
 }
 
 func initSwapServer(ctx *cli.Context) error {
@@ -42,7 +43,8 @@ func initSwapServer(ctx *cli.Context) error {
 	return nil
 }
 
-func prepare(ctx *cli.Context) (err error) {
+// Prepare load keystore and init server
+func Prepare(ctx *cli.Context) (err error) {
 	err = loadKeyStore(ctx)
 	if err != nil {
 		return err

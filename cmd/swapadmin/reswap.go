@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/anyswap/CrossChain-Bridge/admin"
 	"github.com/anyswap/CrossChain-Bridge/cmd/utils"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/urfave/cli/v2"
@@ -23,7 +24,7 @@ var (
 		Description: `
 admin reswap swap
 `,
-		Flags: commonAdminFlags,
+		Flags: admin.CommonFlags,
 	}
 )
 
@@ -39,7 +40,7 @@ func reswap(ctx *cli.Context) error {
 }
 
 func reverifyOrReswap(ctx *cli.Context, method string) error {
-	err := prepare(ctx)
+	err := admin.Prepare(ctx)
 	if err != nil {
 		return err
 	}
@@ -71,7 +72,7 @@ func reverifyOrReswap(ctx *cli.Context, method string) error {
 		log.Printf("admin %v: %v %v %v %v", method, operation, txid, pairID, bind)
 	}
 
-	result, err := adminCall(method, params)
+	result, err := admin.SwapAdmin(method, params)
 
 	log.Printf("result is '%v'", result)
 	return err

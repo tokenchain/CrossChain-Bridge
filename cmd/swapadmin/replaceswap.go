@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/anyswap/CrossChain-Bridge/admin"
 	"github.com/anyswap/CrossChain-Bridge/cmd/utils"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/urfave/cli/v2"
@@ -18,7 +19,7 @@ var (
 		Description: `
 admin replace swap with higher gas price
 `,
-		Flags: commonAdminFlags,
+		Flags: admin.CommonFlags,
 	}
 )
 
@@ -31,7 +32,7 @@ func replaceswap(ctx *cli.Context) error {
 		return fmt.Errorf("invalid number arguments: %q", ctx.Args())
 	}
 
-	err := prepare(ctx)
+	err := admin.Prepare(ctx)
 	if err != nil {
 		return err
 	}
@@ -62,7 +63,7 @@ func replaceswap(ctx *cli.Context) error {
 	params := []string{operation, txid, pairID, bind, gasPriceStr}
 	log.Printf("admin %v: %v %v %v %v %v", method, operation, txid, pairID, bind, gasPriceStr)
 
-	result, err := adminCall(method, params)
+	result, err := admin.SwapAdmin(method, params)
 
 	log.Printf("result is '%v'", result)
 	return err
