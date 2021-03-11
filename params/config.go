@@ -11,11 +11,6 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 )
 
-const (
-	defaultAPIPort      = 11556
-	defServerConfigFile = "config.toml"
-)
-
 var (
 	serverConfig      *ServerConfig
 	loadConfigStarter sync.Once
@@ -78,15 +73,6 @@ type MongoDBConfig struct {
 	Password string `json:"-"`
 }
 
-// GetAPIPort get api service port
-func GetAPIPort() int {
-	apiPort := GetConfig().APIServer.Port
-	if apiPort == 0 {
-		apiPort = defaultAPIPort
-	}
-	return apiPort
-}
-
 // GetIdentifier get identifier (to distiguish in dcrm accept)
 func GetIdentifier() string {
 	return GetConfig().Identifier
@@ -121,14 +107,9 @@ func SetConfig(config *ServerConfig) {
 func LoadConfig(configFile string, isServer bool) *ServerConfig {
 	loadConfigStarter.Do(func() {
 		if configFile == "" {
-			// find config file in the execute directory (default).
-			dir, err := common.ExecuteDir()
-			if err != nil {
-				log.Fatalf("LoadConfig error (get ExecuteDir): %v", err)
-			}
-			configFile = common.AbsolutePath(dir, defServerConfigFile)
+			log.Fatal("must specify config file")
 		}
-		log.Println("Config file is", configFile)
+		log.Info("load config file", "configFile", configFile, "isServer", isServer)
 		if !common.FileExist(configFile) {
 			log.Fatalf("LoadConfig error: config file %v not exist", configFile)
 		}

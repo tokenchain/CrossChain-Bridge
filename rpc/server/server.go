@@ -19,15 +19,17 @@ import (
 
 // StartAPIServer start api server
 func StartAPIServer() {
-	var router *mux.Router
+	router := mux.NewRouter()
+	var apiServer *params.APIServerConfig
 	if params.IsRouterSwap() {
-		router = initRouterSwapRouter()
+		apiServer = params.GetRouterConfig().APIServer
+		initRouterSwapRouter(router)
 	} else {
-		router = initRouter()
+		apiServer = params.GetConfig().APIServer
+		initServerRouter(router)
 	}
 
-	apiPort := params.GetAPIPort()
-	apiServer := params.GetConfig().APIServer
+	apiPort := apiServer.Port
 	allowedOrigins := apiServer.AllowedOrigins
 
 	corsOptions := []handlers.CORSOption{
@@ -54,9 +56,7 @@ func StartAPIServer() {
 	}()
 }
 
-func initRouterSwapRouter() *mux.Router {
-	r := mux.NewRouter()
-
+func initRouterSwapRouter(r *mux.Router) {
 	rpcserver := rpc.NewServer()
 	rpcserver.RegisterCodec(rpcjson.NewCodec(), "application/json")
 	_ = rpcserver.RegisterService(new(rpcapi.RouterSwapAPI), "swap")
@@ -66,13 +66,9 @@ func initRouterSwapRouter() *mux.Router {
 	registerHandleFunc(r, "/swap/register/{chainid}/{txid}", restapi.RegisterRouterSwapHandler, "POST")
 	registerHandleFunc(r, "/swap/status/{chainid}/{txid}/{logindex}", restapi.GetRouterSwapHandler, "GET")
 	registerHandleFunc(r, "/swap/history/{chainid}/{address}", restapi.GetRouterSwapHistoryHandler, "GET")
-
-	return r
 }
 
-func initRouter() *mux.Router {
-	r := mux.NewRouter()
-
+func initServerRouter(r *mux.Router) {
 	rpcserver := rpc.NewServer()
 	rpcserver.RegisterCodec(rpcjson.NewCodec(), "application/json")
 	_ = rpcserver.RegisterService(new(rpcapi.RPCAPI), "swap")
@@ -102,10 +98,6 @@ func initRouter() *mux.Router {
 	registerHandleFunc(r, "/p2sh/bind/{address}", restapi.RegisterP2shAddress, "POST")
 	registerHandleFunc(r, "/registered/{address}", restapi.GetRegisteredAddress, "GET")
 	registerHandleFunc(r, "/register/{address}", restapi.RegisterAddress, "POST")
-
-	registerHandleFunc(r, "/swap/register/{chainid}/{txid}", restapi.RegisterRouterSwapHandler, "POST")
-
-	return r
 }
 
 type handleFuncType = func(w http.ResponseWriter, r *http.Request)

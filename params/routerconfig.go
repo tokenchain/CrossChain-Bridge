@@ -2,7 +2,6 @@ package params
 
 import (
 	"encoding/json"
-	"math/big"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -38,19 +37,9 @@ type OnchainConfig struct {
 	Contract string
 }
 
-// GetChainConfig impl
-func GetChainConfig(chainID *big.Int) *tokens.ChainConfig {
-	return nil
-}
-
-// GetTokenConfig impl
-func GetTokenConfig(chainID *big.Int) *tokens.TokenConfig {
-	return nil
-}
-
-// GetDcrmConfig impl
-func GetDcrmConfig() *DcrmConfig {
-	return nil
+// GetRouterConfig get router config
+func GetRouterConfig() *RouterConfig {
+	return routerConfig
 }
 
 // HasRouterAdmin has admin
@@ -70,11 +59,14 @@ func IsRouterAdmin(account string) bool {
 
 // IsRouterSwap is router swap
 func IsRouterSwap() bool {
-	return strings.EqualFold(GetIdentifier(), RouterSwapIdentifier)
+	return strings.EqualFold(routerConfig.Identifier, RouterSwapIdentifier)
 }
 
 // LoadRouterConfig load router swap config
 func LoadRouterConfig(configFile string, isServer bool) *RouterConfig {
+	if configFile == "" {
+		log.Fatal("must specify config file")
+	}
 	log.Info("load router config file", "configFile", configFile, "isServer", isServer)
 	if !common.FileExist(configFile) {
 		log.Fatalf("LoadRouterConfig error: config file '%v' not exist", configFile)
