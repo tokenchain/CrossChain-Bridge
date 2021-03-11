@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"sort"
 	"time"
 
 	"github.com/anyswap/CrossChain-Bridge/cmd/utils"
@@ -29,6 +28,7 @@ func initApp() {
 	app.HideVersion = true // we have a command to print the version
 	app.Copyright = "Copyright 2017-2020 The CrossChain-Bridge Authors"
 	app.Commands = []*cli.Command{
+		adminCommand,
 		utils.LicenseCommand,
 		utils.VersionCommand,
 	}
@@ -42,7 +42,6 @@ func initApp() {
 		utils.JSONFormatFlag,
 		utils.ColorFormatFlag,
 	}
-	sort.Sort(cli.CommandsByName(app.Commands))
 }
 
 func main() {

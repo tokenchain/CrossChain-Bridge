@@ -130,6 +130,33 @@ var (
 		Name:  "runserver",
 		Usage: "run server if flag is set, or run oracle",
 	}
+	// ChainIDFlag --chainID
+	ChainIDFlag = &cli.StringFlag{
+		Name:  "chainID",
+		Usage: "chain id (required)",
+	}
+	// TxIDFlag --txid
+	TxIDFlag = &cli.StringFlag{
+		Name:  "txid",
+		Usage: "tx id (required)",
+	}
+	// LogIndexFlag --logIndex
+	LogIndexFlag = &cli.IntFlag{
+		Name:  "logIndex",
+		Usage: "log index",
+	}
+	// GasPriceFlag --gasPrice
+	GasPriceFlag = &cli.StringFlag{
+		Name:  "gasPrice",
+		Usage: "gas price",
+	}
+
+	// CommonLogFlags common log flags
+	CommonLogFlags = []cli.Flag{
+		VerbosityFlag,
+		JSONFormatFlag,
+		ColorFormatFlag,
+	}
 )
 
 // SetLogger set log level, json format, color, rotate ...
