@@ -1,7 +1,6 @@
 package router
 
 import (
-	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,14 +23,14 @@ const (
 func (b *Bridge) verifyTransactionReceiver(rawTx interface{}) (*types.Transaction, error) {
 	tx, ok := rawTx.(*types.Transaction)
 	if !ok {
-		return nil, errors.New("wrong raw tx param")
+		return nil, errors.New("[sign] wrong raw tx param")
 	}
 	if tx.To() == nil || *tx.To() == (common.Address{}) {
-		return nil, fmt.Errorf("[sign] verify tx receiver failed")
+		return nil, errors.New("[sign] tx receiver is empty")
 	}
 	checkReceiver := b.ChainConfig.RouterContract
 	if !strings.EqualFold(tx.To().String(), checkReceiver) {
-		return nil, fmt.Errorf("[sign] verify tx receiver failed")
+		return nil, fmt.Errorf("[sign] tx receiver mismatch. have %v want %v", tx.To().String(), checkReceiver)
 	}
 	return tx, nil
 }
@@ -42,51 +41,31 @@ func (b *Bridge) DcrmSignTransaction(rawTx interface{}, args *tokens.BuildTxArgs
 	if err != nil {
 		return nil, "", err
 	}
+
 	gasPrice, err := b.getGasPrice()
 	if err == nil && args.Extra.EthExtra.GasPrice.Cmp(gasPrice) < 0 {
 		args.Extra.EthExtra.GasPrice = gasPrice
 	}
+
+	mpcAddress := b.ChainConfig.RouterMPC
+	mpcPubkey := b.GetDcrmPublicKey(mpcAddress)
+
 	signer := b.Signer
 	msgHash := signer.Hash(tx)
 	jsondata, _ := json.Marshal(args)
 	msgContext := string(jsondata)
-	rpcAddr, keyID, err := dcrm.DoSignOne(b.GetDcrmPublicKey(args.PairID), msgHash.String(), msgContext)
+	rpcAddr, keyID, err := dcrm.DoSignOne(mpcPubkey, msgHash.String(), msgContext)
 	if err != nil {
 		return nil, "", err
 	}
-	log.Info(b.ChainConfig.BlockChain+" DcrmSignTransaction start", "keyID", keyID, "msghash", msgHash.String(), "txid", args.SwapID)
-	time.Sleep(retryGetSignStatusInterval)
 
-	var rsv string
-	i := 0
-	for ; i < retryGetSignStatusCount; i++ {
-		signStatus, err2 := dcrm.GetSignStatus(keyID, rpcAddr)
-		if err2 == nil {
-			if len(signStatus.Rsv) != 1 {
-				return nil, "", fmt.Errorf("get sign status require one rsv but have %v (keyID = %v)", len(signStatus.Rsv), keyID)
-			}
+	txid := args.SwapID
+	logPrefix := b.ChainConfig.BlockChain + " DcrmSignTransaction "
+	log.Info(logPrefix+"start", "keyID", keyID, "txid", txid, "msghash", msgHash.String())
 
-			rsv = signStatus.Rsv[0]
-			break
-		}
-		switch err2 {
-		case dcrm.ErrGetSignStatusFailed, dcrm.ErrGetSignStatusTimeout:
-			return nil, "", err2
-		}
-		log.Warn("retry get sign status as error", "err", err2, "txid", args.SwapID, "keyID", keyID, "bridge", args.Identifier, "swaptype", args.SwapType.String())
-		time.Sleep(retryGetSignStatusInterval)
-	}
-	if i == retryGetSignStatusCount || rsv == "" {
-		return nil, "", errors.New("get sign status failed")
-	}
-
-	log.Trace(b.ChainConfig.BlockChain+" DcrmSignTransaction get rsv success", "keyID", keyID, "rsv", rsv)
-
-	signature := common.FromHex(rsv)
-
-	if len(signature) != crypto.SignatureLength {
-		log.Error("DcrmSignTransaction wrong length of signature")
-		return nil, "", errors.New("wrong signature of keyID " + keyID)
+	signature, err := getSignature(keyID, rpcAddr, txid)
+	if err != nil {
+		return nil, "", err
 	}
 
 	signedTx, err := tx.WithSignature(signer, signature)
@@ -99,35 +78,50 @@ func (b *Bridge) DcrmSignTransaction(rawTx interface{}, args *tokens.BuildTxArgs
 		return nil, "", err
 	}
 
-	checkSender := b.ChainConfig.RouterMPC
-	if !strings.EqualFold(sender.String(), checkSender) {
-		log.Error("DcrmSignTransaction verify sender failed", "have", sender.String(), "want", checkSender)
+	if !strings.EqualFold(sender.String(), mpcAddress) {
+		log.Error(logPrefix+"verify sender failed", "have", sender.String(), "want", mpcAddress)
 		return nil, "", errors.New("wrong sender address")
 	}
 	txHash = signedTx.Hash().String()
-	log.Info(b.ChainConfig.BlockChain+" DcrmSignTransaction success", "keyID", keyID, "txhash", txHash, "nonce", signedTx.Nonce())
+	log.Info(logPrefix+"success", "keyID", keyID, "txid", txid, "txhash", txHash, "nonce", signedTx.Nonce())
 	return signedTx, txHash, err
 }
 
-// SignTransaction sign tx with pairID
-func (b *Bridge) SignTransaction(rawTx interface{}, token string) (signTx interface{}, txHash string, err error) {
-	privKey := b.GetTokenConfig(token).GetDcrmAddressPrivateKey()
-	return b.SignTransactionWithPrivateKey(rawTx, privKey)
-}
+func getSignature(keyID, rpcAddr, txid string) ([]byte, error) {
+	time.Sleep(5 * time.Second)
 
-// SignTransactionWithPrivateKey sign tx with ECDSA private key
-func (b *Bridge) SignTransactionWithPrivateKey(rawTx interface{}, privKey *ecdsa.PrivateKey) (signTx interface{}, txHash string, err error) {
-	tx, ok := rawTx.(*types.Transaction)
-	if !ok {
-		return nil, "", errors.New("wrong raw tx param")
+	rsv := ""
+	i := 0
+	for ; i < retryGetSignStatusCount; i++ {
+		signStatus, err := dcrm.GetSignStatus(keyID, rpcAddr)
+		if err == nil {
+			if len(signStatus.Rsv) != 1 {
+				log.Warn("get sign status require one rsv but return many",
+					"rsvs", len(signStatus.Rsv), "keyID", keyID, "txid", txid, "rpcAddr", rpcAddr)
+				return nil, errors.New("get sign status require one rsv but return many")
+			}
+
+			rsv = signStatus.Rsv[0]
+			break
+		}
+		switch err {
+		case dcrm.ErrGetSignStatusFailed, dcrm.ErrGetSignStatusTimeout:
+			return nil, err
+		}
+		log.Warn("retry get sign status as error", "err", err, "keyID", keyID, "txid", txid, "rpcAddr", rpcAddr)
+		time.Sleep(retryGetSignStatusInterval)
+	}
+	if i == retryGetSignStatusCount || rsv == "" {
+		return nil, errors.New("get sign status failed")
+	}
+	log.Trace("get rsv signature success", "keyID", keyID, "txid", txid, "rsv", rsv, "rpcAddr", rpcAddr)
+
+	signature := common.FromHex(rsv)
+
+	if len(signature) != crypto.SignatureLength {
+		log.Error("wrong signature length", "keyID", keyID, "txid", txid, "have", len(signature), "want", crypto.SignatureLength)
+		return nil, errors.New("wrong signature length")
 	}
 
-	signedTx, err := types.SignTx(tx, b.Signer, privKey)
-	if err != nil {
-		return nil, "", fmt.Errorf("sign tx failed, %v", err)
-	}
-
-	txHash = signedTx.Hash().String()
-	log.Info(b.ChainConfig.BlockChain+" SignTransaction success", "txhash", txHash, "nonce", signedTx.Nonce())
-	return signedTx, txHash, err
+	return signature, nil
 }
