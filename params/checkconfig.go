@@ -72,6 +72,9 @@ func checkChainAndGatewayConfig() (err error) {
 // CheckConfig check dcrm config
 func (c *DcrmConfig) CheckConfig(isServer bool) (err error) {
 	if c.Disable {
+		if IsRouterSwap() {
+			return errors.New("forbid disable dcrm in router swap")
+		}
 		return nil
 	}
 	if c.GroupID == nil {

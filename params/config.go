@@ -36,14 +36,14 @@ type ServerConfig struct {
 
 // DcrmConfig dcrm related config
 type DcrmConfig struct {
-	Disable       bool
+	Disable       bool `toml:",omitempty" json:",omitempty"`
 	GroupID       *string
 	NeededOracles *uint32
 	TotalOracles  *uint32
 	Mode          uint32 // 0:managed 1:private (default 0)
 	Initiators    []string
 	DefaultNode   *DcrmNodeConfig
-	OtherNodes    []*DcrmNodeConfig
+	OtherNodes    []*DcrmNodeConfig `toml:",omitempty" json:",omitempty"`
 }
 
 // DcrmNodeConfig dcrm node config

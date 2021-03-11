@@ -28,6 +28,7 @@ func (config *RouterConfig) CheckConfig(isServer bool) (err error) {
 	if config.Identifier != RouterSwapIdentifier {
 		return fmt.Errorf("wrong identifier, have '%v', want '%v'", config.Identifier, RouterSwapIdentifier)
 	}
+	log.Info("check identifier pass", "identifier", config.Identifier, "isServer", isServer)
 	if isServer {
 		if config.MongoDB == nil {
 			return errors.New("server must config 'MongoDB'")
@@ -44,6 +45,7 @@ func (config *RouterConfig) CheckConfig(isServer bool) (err error) {
 	if err != nil {
 		return err
 	}
+	log.Info("check dcrm config pass", "isServer", isServer)
 
 	if config.Onchain == nil {
 		return errors.New("server must config 'Onchain'")
@@ -52,6 +54,7 @@ func (config *RouterConfig) CheckConfig(isServer bool) (err error) {
 	if err != nil {
 		return err
 	}
+	log.Info("check onchain config pass")
 
 	return nil
 }
@@ -59,7 +62,7 @@ func (config *RouterConfig) CheckConfig(isServer bool) (err error) {
 // CheckConfig check onchain config
 func (c *OnchainConfig) CheckConfig() error {
 	callOwnerData := common.FromHex("0x8da5cb5b")
-	for _, apiAddress := range c.Gateway.APIAddress {
+	for _, apiAddress := range c.APIAddress {
 		res, err := CallContractWithGateway(apiAddress, c.Contract, callOwnerData, "latest")
 		if err != nil {
 			log.Warn("check onchain config connection failed", "gateway", apiAddress, "err", err)
@@ -72,6 +75,6 @@ func (c *OnchainConfig) CheckConfig() error {
 		log.Info("check onchain config connection success")
 		return nil
 	}
-	log.Error("wrong onchain config", "gateway", c.Gateway.APIAddress, "contract", c.Contract)
+	log.Error("wrong onchain config", "gateway", c.APIAddress, "contract", c.Contract)
 	return errors.New("check onchain config connection failed")
 }

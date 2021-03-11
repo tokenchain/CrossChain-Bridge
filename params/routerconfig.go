@@ -7,7 +7,6 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/log"
-	"github.com/anyswap/CrossChain-Bridge/tokens"
 )
 
 // router swap constants
@@ -19,22 +18,26 @@ var (
 	routerConfig *RouterConfig
 )
 
-// RouterConfig config
-type RouterConfig struct {
-	Identifier string
-	Onchain    *OnchainConfig `toml:",omitempty" json:",omitempty"`
-	Dcrm       *DcrmConfig    `toml:",omitempty" json:",omitempty"`
-
-	// only for server
+// RouterServerConfig only for server
+type RouterServerConfig struct {
 	Admins    []string         `toml:",omitempty" json:",omitempty"`
 	MongoDB   *MongoDBConfig   `toml:",omitempty" json:",omitempty"`
 	APIServer *APIServerConfig `toml:",omitempty" json:",omitempty"`
 }
 
+// RouterConfig config
+type RouterConfig struct {
+	*RouterServerConfig `toml:",omitempty" json:",omitempty"`
+
+	Identifier string
+	Onchain    *OnchainConfig `toml:",omitempty" json:",omitempty"`
+	Dcrm       *DcrmConfig    `toml:",omitempty" json:",omitempty"`
+}
+
 // OnchainConfig struct
 type OnchainConfig struct {
-	Gateway  *tokens.GatewayConfig
-	Contract string
+	Contract   string
+	APIAddress []string
 }
 
 // GetRouterConfig get router config
@@ -74,6 +77,10 @@ func LoadRouterConfig(configFile string, isServer bool) *RouterConfig {
 	config := &RouterConfig{}
 	if _, err := toml.DecodeFile(configFile, &config); err != nil {
 		log.Fatalf("LoadRouterConfig error (toml DecodeFile): %v", err)
+	}
+
+	if !isServer {
+		config.RouterServerConfig = nil
 	}
 
 	var bs []byte
