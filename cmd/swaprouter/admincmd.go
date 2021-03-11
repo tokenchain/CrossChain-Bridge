@@ -63,6 +63,10 @@ func getKeys(ctx *cli.Context) (chainID, txid, logIndex string, err error) {
 		return
 	}
 	txid = ctx.String(utils.TxIDFlag.Name)
+	if !common.IsHexHash(txid) {
+		err = fmt.Errorf("wrong tx id '%v'", txid)
+		return
+	}
 	logIndex = fmt.Sprintf("%d", ctx.Int(utils.LogIndexFlag.Name))
 	return
 }

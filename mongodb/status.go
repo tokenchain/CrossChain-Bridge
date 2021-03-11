@@ -115,7 +115,7 @@ func (status SwapStatus) CanReverify() bool {
 // CanReswap can reswap
 func (status SwapStatus) CanReswap() bool {
 	switch status {
-	case TxSwapFailed, TxProcessed:
+	case TxSwapFailed, TxProcessed, MatchTxFailed:
 		return true
 	default:
 		return false

@@ -53,6 +53,21 @@ func GetDcrmConfig() *DcrmConfig {
 	return nil
 }
 
+// HasRouterAdmin has admin
+func HasRouterAdmin() bool {
+	return len(routerConfig.Admins) != 0
+}
+
+// IsRouterAdmin is admin
+func IsRouterAdmin(account string) bool {
+	for _, admin := range routerConfig.Admins {
+		if strings.EqualFold(account, admin) {
+			return true
+		}
+	}
+	return false
+}
+
 // IsRouterSwap is router swap
 func IsRouterSwap() bool {
 	return strings.EqualFold(GetIdentifier(), RouterSwapIdentifier)

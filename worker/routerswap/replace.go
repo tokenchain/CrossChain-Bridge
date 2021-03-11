@@ -57,20 +57,11 @@ func processRouterSwapReplace(res *mongodb.MgoSwapResult) error {
 	if getSepTimeInFind(waitTimeToReplace) < res.Timestamp {
 		return nil
 	}
-	return ReplaceRouterSwap(res, "")
+	return ReplaceRouterSwap(res, nil)
 }
 
 // ReplaceRouterSwap api
-func ReplaceRouterSwap(res *mongodb.MgoSwapResult, gasPriceStr string) error {
-	var gasPrice *big.Int
-	if gasPriceStr != "" {
-		var ok bool
-		gasPrice, ok = new(big.Int).SetString(gasPriceStr, 0)
-		if !ok {
-			return fmt.Errorf("wrong gas price: %v", gasPriceStr)
-		}
-	}
-
+func ReplaceRouterSwap(res *mongodb.MgoSwapResult, gasPrice *big.Int) error {
 	swap, err := verifyReplaceSwap(res)
 	if err != nil {
 		return err
@@ -153,10 +144,10 @@ func verifyReplaceSwap(res *mongodb.MgoSwapResult) (*mongodb.MgoSwap, error) {
 	mpc := resBridge.ChainConfig.RouterMPC
 	nonce, err := resBridge.GetPoolNonce(mpc, "latest")
 	if err != nil {
-		return nil, fmt.Errorf("get nonce failed, %v", err)
+		return nil, fmt.Errorf("get router mpc nonce failed, %v", err)
 	}
 	if nonce > res.SwapNonce {
-		return nil, errors.New("can not replace swap with old nonce")
+		return nil, fmt.Errorf("can not replace swap with nonce (%v) which is lower than latest nonce (%v)", res.SwapNonce, nonce)
 	}
 
 	return swap, nil

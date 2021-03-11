@@ -1,11 +1,14 @@
 package mongodb
 
 import (
+	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/log"
+	"github.com/anyswap/CrossChain-Bridge/tokens/router"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -291,4 +294,68 @@ func UpdateRouterSwapResult(fromChainID, txid string, logindex int, items *SwapR
 		log.Debug("mongodb update router swap result failed", "chainid", fromChainID, "txid", txid, "logindex", logindex, "updates", updates, "err", err)
 	}
 	return mgoError(err)
+}
+
+// ----------------------------- admin functions -------------------------------------
+
+// RouterAdminPassBigValue pass big value
+func RouterAdminPassBigValue(fromChainID, txid string, logIndex int) error {
+	swap, err := FindRouterSwap(fromChainID, txid, logIndex)
+	if err != nil {
+		return err
+	}
+	if swap.Status != TxWithBigValue {
+		return fmt.Errorf("swap status is %v, not big value status %v", swap.Status.String(), TxWithBigValue.String())
+	}
+	return UpdateRouterSwapStatus(fromChainID, txid, logIndex, TxNotSwapped, time.Now().Unix(), "")
+}
+
+// RouterAdminReswap reswap
+func RouterAdminReswap(fromChainID, txid string, logIndex int) error {
+	swap, err := FindRouterSwap(fromChainID, txid, logIndex)
+	if err != nil {
+		return err
+	}
+	if !swap.Status.CanReswap() {
+		return fmt.Errorf("swap status is %v, can not reswap", swap.Status.String())
+	}
+
+	res, err := FindRouterSwapResult(fromChainID, txid, logIndex)
+	if err != nil {
+		return err
+	}
+	if !res.Status.CanReswap() {
+		return fmt.Errorf("swap result status is %v, can not reswap", res.Status.String())
+	}
+	if res.SwapTx == "" {
+		return errors.New("swap without swaptx")
+	}
+
+	resBridge := router.GetBridgeByChainID(swap.ToChainID)
+	_, err = resBridge.GetTransaction(res.SwapTx)
+	if err == nil && res.Status != MatchTxFailed {
+		return errors.New("swaptx exist in chain or pool")
+	}
+	if err != nil && res.Status == MatchTxFailed {
+		return errors.New("failed swaptx not exist in chain or pool")
+	}
+
+	mpcAddress := resBridge.ChainConfig.RouterMPC
+	nonce, err := resBridge.GetPoolNonce(mpcAddress, "latest")
+	if err != nil {
+		log.Warn("get router mpc nonce failed", "address", mpcAddress)
+		return err
+	}
+	if nonce <= res.SwapNonce {
+		return errors.New("can not retry swap with lower nonce")
+	}
+
+	log.Info("[reswap] update status to TxNotSwapped", "chainid", fromChainID, "txid", txid, "logIndex", logIndex, "swaptx", res.SwapTx)
+
+	err = UpdateRouterSwapResultStatus(fromChainID, txid, logIndex, MatchTxEmpty, time.Now().Unix(), "")
+	if err != nil {
+		return err
+	}
+
+	return UpdateRouterSwapStatus(fromChainID, txid, logIndex, TxNotSwapped, time.Now().Unix(), "")
 }

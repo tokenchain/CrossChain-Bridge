@@ -14,6 +14,17 @@ import (
 )
 
 const (
+	blacklistCmd    = "blacklist"
+	bigvalueCmd     = "bigvalue"
+	passbigvalueCmd = "passbigvalue"
+	maintainCmd     = "maintain"
+	reverifyCmd     = "reverify"
+	reswapCmd       = "reswap"
+	replaceswapCmd  = "replaceswap"
+	manualCmd       = "manual"
+	setnonceCmd     = "setnonce"
+	addpairCmd      = "addpair"
+
 	successReuslt = "Success"
 	swapinOp      = "swapin"
 	swapoutOp     = "swapout"
@@ -45,23 +56,23 @@ func (s *RPCAPI) AdminCall(r *http.Request, rawTx, result *string) (err error) {
 
 func doCall(args *admin.CallArgs, result *string) error {
 	switch args.Method {
-	case "blacklist":
+	case blacklistCmd:
 		return blacklist(args, result)
-	case "bigvalue":
+	case bigvalueCmd:
 		return bigvalue(args, result)
-	case "maintain":
+	case maintainCmd:
 		return maintain(args, result)
-	case "reverify":
+	case reverifyCmd:
 		return reverify(args, result)
-	case "reswap":
+	case reswapCmd:
 		return reswap(args, result)
-	case "replaceswap":
+	case replaceswapCmd:
 		return replaceswap(args, result)
-	case "manual":
+	case manualCmd:
 		return manual(args, result)
-	case "setnonce":
+	case setnonceCmd:
 		return setnonce(args, result)
-	case "addpair":
+	case addpairCmd:
 		return addpair(args, result)
 	default:
 		return fmt.Errorf("unknown admin method '%v'", args.Method)
