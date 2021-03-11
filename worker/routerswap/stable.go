@@ -68,7 +68,7 @@ func processRouterSwapStable(swap *mongodb.MgoSwapResult) (err error) {
 	}
 
 	if swap.SwapHeight != 0 {
-		if txStatus.Confirmations < *resBridge.GetChainConfig().Confirmations {
+		if txStatus.Confirmations < resBridge.GetChainConfig().Confirmations {
 			return nil
 		}
 		if swap.SwapTx != oldSwapTx {

@@ -340,7 +340,7 @@ func RouterAdminReswap(fromChainID, txid string, logIndex int) error {
 		return errors.New("failed swaptx not exist in chain or pool")
 	}
 
-	mpcAddress := resBridge.ChainConfig.RouterMPC
+	mpcAddress := resBridge.ChainConfig.GetRouterMPC()
 	nonce, err := resBridge.GetPoolNonce(mpcAddress, "latest")
 	if err != nil {
 		log.Warn("get router mpc nonce failed", "address", mpcAddress)

@@ -138,7 +138,7 @@ func rebuildAndVerifyMsgHash(msgHash []string, args *tokens.BuildTxArgs) (err er
 
 	buildTxArgs := &tokens.BuildTxArgs{
 		SwapInfo:    args.SwapInfo,
-		From:        dstBridge.ChainConfig.RouterMPC,
+		From:        dstBridge.ChainConfig.GetRouterMPC(),
 		OriginValue: swapInfo.Value,
 		Extra:       args.Extra,
 	}

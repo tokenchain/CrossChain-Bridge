@@ -36,7 +36,7 @@ func (b *Bridge) buildRouterSwapTxInput(args *tokens.BuildTxArgs) (err error) {
 }
 
 func (b *Bridge) buildRouterSwapoutTxInput(args *tokens.BuildTxArgs) (err error) {
-	token, receiver, amount, err := b.getReceiverAndAmount(args)
+	receiver, amount, err := b.getReceiverAndAmount(args)
 	if err != nil {
 		return err
 	}
@@ -53,11 +53,11 @@ func (b *Bridge) buildRouterSwapoutTxInput(args *tokens.BuildTxArgs) (err error)
 	args.To = b.ChainConfig.RouterContract // to
 	args.SwapValue = amount                // swapValue
 
-	return b.checkBalance(token.ContractAddress, token.DcrmAddress, amount)
+	return nil
 }
 
 func (b *Bridge) buildRouterSwapTradeTxInput(args *tokens.BuildTxArgs) (err error) {
-	token, receiver, amount, err := b.getReceiverAndAmount(args)
+	receiver, amount, err := b.getReceiverAndAmount(args)
 	if err != nil {
 		return err
 	}
@@ -80,22 +80,28 @@ func (b *Bridge) buildRouterSwapTradeTxInput(args *tokens.BuildTxArgs) (err erro
 	args.To = b.ChainConfig.RouterContract // to
 	args.SwapValue = amount                // swapValue
 
-	return b.checkBalance(token.ContractAddress, token.DcrmAddress, amount)
+	return nil
 }
 
-func (b *Bridge) getReceiverAndAmount(args *tokens.BuildTxArgs) (tokenCfg *tokens.TokenConfig, receiver common.Address, amount *big.Int, err error) {
-	tokenCfg = b.GetTokenConfig(args.Path[0])
-	if tokenCfg == nil {
-		return tokenCfg, receiver, amount, tokens.ErrMissTokenConfig
-	}
+func (b *Bridge) getReceiverAndAmount(args *tokens.BuildTxArgs) (receiver common.Address, amount *big.Int, err error) {
 	receiver = common.HexToAddress(args.Bind)
 	if receiver == (common.Address{}) || !common.IsHexAddress(args.Bind) {
 		log.Warn("swapout to wrong receiver", "receiver", args.Bind)
-		return tokenCfg, receiver, amount, errors.New("can not swapout to empty or invalid receiver")
+		return receiver, amount, errors.New("can not swapout to empty or invalid receiver")
 	}
 	fromBridge := GetBridgeByChainID(args.FromChainID.String())
-	amount = fromBridge.CalcSwapValue(args.Token, args.OriginValue)
-	return tokenCfg, receiver, amount, nil
+	fromTokenCfg := fromBridge.GetTokenConfig(args.Token)
+	if fromTokenCfg == nil {
+		return receiver, amount, tokens.ErrMissTokenConfig
+	}
+	amount = CalcSwapValue(fromTokenCfg, args.OriginValue)
+
+	tokenCfg := b.GetTokenConfig(args.Path[0])
+	if tokenCfg == nil {
+		return receiver, amount, tokens.ErrMissTokenConfig
+	}
+	err = b.checkBalance(tokenCfg.ContractAddress, args.From, amount)
+	return receiver, amount, err
 }
 
 func toAddresses(path []string) []common.Address {

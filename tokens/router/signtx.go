@@ -47,8 +47,8 @@ func (b *Bridge) DcrmSignTransaction(rawTx interface{}, args *tokens.BuildTxArgs
 		args.Extra.EthExtra.GasPrice = gasPrice
 	}
 
-	mpcAddress := b.ChainConfig.RouterMPC
-	mpcPubkey := b.GetDcrmPublicKey(mpcAddress)
+	mpcAddress := b.ChainConfig.GetRouterMPC()
+	mpcPubkey := b.ChainConfig.GetRouterMPCPubkey()
 
 	signer := b.Signer
 	msgHash := signer.Hash(tx)

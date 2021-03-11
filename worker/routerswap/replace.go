@@ -87,7 +87,7 @@ func ReplaceRouterSwap(res *mongodb.MgoSwapResult, gasPrice *big.Int) error {
 			TxType:     tokens.SwapTxType(swap.TxType),
 			Bind:       res.Bind,
 		},
-		From:        resBridge.ChainConfig.RouterMPC,
+		From:        resBridge.ChainConfig.GetRouterMPC(),
 		OriginValue: value,
 		Extra: &tokens.AllExtras{
 			EthExtra: &tokens.EthExtraArgs{
@@ -141,7 +141,7 @@ func verifyReplaceSwap(res *mongodb.MgoSwapResult) (*mongodb.MgoSwap, error) {
 		return nil, errors.New("swaptx exist in chain")
 	}
 
-	mpc := resBridge.ChainConfig.RouterMPC
+	mpc := resBridge.ChainConfig.GetRouterMPC()
 	nonce, err := resBridge.GetPoolNonce(mpc, "latest")
 	if err != nil {
 		return nil, fmt.Errorf("get router mpc nonce failed, %v", err)

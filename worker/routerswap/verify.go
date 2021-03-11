@@ -55,7 +55,7 @@ func processRouterSwapVerify(swap *mongodb.MgoSwap) (err error) {
 		return err
 	}
 
-	if swapInfo.Height != 0 && swapInfo.Height < *bridge.ChainConfig.InitialHeight {
+	if swapInfo.Height != 0 && swapInfo.Height < bridge.ChainConfig.InitialHeight {
 		err = tokens.ErrTxBeforeInitialHeight
 		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxVerifyFailed, now(), err.Error())
 	}

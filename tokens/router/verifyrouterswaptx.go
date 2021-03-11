@@ -72,7 +72,7 @@ func (b *Bridge) VerifyRouterSwapTx(txHash string, logIndex int, allowUnstable b
 	swapInfo.Height = txStatus.BlockHeight  // Height
 	swapInfo.Timestamp = txStatus.BlockTime // Timestamp
 
-	if !allowUnstable && txStatus.Confirmations < *b.ChainConfig.Confirmations {
+	if !allowUnstable && txStatus.Confirmations < b.ChainConfig.Confirmations {
 		return swapInfo, tokens.ErrTxNotStable
 	}
 
@@ -112,7 +112,7 @@ func (b *Bridge) checkRouterSwapInfo(swapInfo *tokens.TxSwapInfo) error {
 	if tokenCfg == nil {
 		return tokens.ErrMissTokenConfig
 	}
-	if !tokens.CheckTokenSwapValue(tokenCfg, swapInfo.Value) {
+	if !CheckTokenSwapValue(tokenCfg, swapInfo.Value) {
 		return tokens.ErrTxWithWrongValue
 	}
 	dstBridge := GetBridgeByChainID(swapInfo.ToChainID.String())

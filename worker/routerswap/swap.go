@@ -126,7 +126,7 @@ func processRouterSwap(swap *mongodb.MgoSwap) (err error) {
 			TxType:   tokens.SwapTxType(swap.TxType),
 			Bind:     bind,
 		},
-		From:        dstBridge.ChainConfig.RouterMPC,
+		From:        dstBridge.ChainConfig.GetRouterMPC(),
 		OriginValue: value,
 	}
 	args.RouterSwapInfo, err = getRouterSwapInfoFromSwap(swap)

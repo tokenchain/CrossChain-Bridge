@@ -137,7 +137,7 @@ func (b *Bridge) adjustSwapGasPrice(pairID string, extra *tokens.EthExtraArgs) e
 	if tokenCfg == nil {
 		return tokens.ErrUnknownPairID
 	}
-	addPercent := tokenCfg.PlusGasPricePercentage
+	addPercent := b.ChainConfig.PlusGasPricePercentage
 	if addPercent > 0 {
 		extra.GasPrice.Mul(extra.GasPrice, big.NewInt(int64(100+addPercent)))
 		extra.GasPrice.Div(extra.GasPrice, big.NewInt(100))
@@ -192,4 +192,8 @@ func (b *Bridge) checkBalance(token, account string, amount *big.Int) (err error
 	}
 	log.Warn("get balance error", "token", token, "account", account, "err", err)
 	return err
+}
+
+func toBits(value float64, decimals uint8) *big.Int {
+	return tokens.ToBits(value, decimals)
 }
