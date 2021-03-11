@@ -63,6 +63,9 @@ func UpdateRouterSwapStatus(fromChainID, txid string, logindex int, status SwapS
 
 // FindRouterSwap find router swap
 func FindRouterSwap(fromChainID, txid string, logindex int) (*MgoSwap, error) {
+	if logindex == 0 {
+		return findFirstRouterSwap(fromChainID, txid)
+	}
 	key := getRouterSwapKey(fromChainID, txid, logindex)
 	result := &MgoSwap{}
 	err := collRouterSwap.FindId(key).One(result)
@@ -70,6 +73,22 @@ func FindRouterSwap(fromChainID, txid string, logindex int) (*MgoSwap, error) {
 		return nil, mgoError(err)
 	}
 	return result, nil
+}
+
+func findFirstRouterSwap(fromChainID, txid string) (*MgoSwap, error) {
+	result := &MgoSwap{}
+	query := getChainAndTxIDQuery(fromChainID, txid)
+	err := collRouterSwap.Find(query).One(result)
+	if err != nil {
+		return nil, mgoError(err)
+	}
+	return result, nil
+}
+
+func getChainAndTxIDQuery(fromChainID, txid string) bson.M {
+	qtxid := bson.M{"txid": txid}
+	qchainid := bson.M{"fromChainID": fromChainID}
+	return bson.M{"$and": []bson.M{qtxid, qchainid}}
 }
 
 func getStatusQuery(status SwapStatus, septime int64) bson.M {
@@ -80,10 +99,10 @@ func getStatusQuery(status SwapStatus, septime int64) bson.M {
 }
 
 func getStatusQueryWithChainID(fromChainID string, status SwapStatus, septime int64) bson.M {
-	qchainid := bson.M{"fromChainID": fromChainID}
 	qtime := bson.M{"timestamp": bson.M{"$gte": septime}}
 	qstatus := bson.M{"status": status}
-	queries := []bson.M{qchainid, qstatus, qtime}
+	qchainid := bson.M{"fromChainID": fromChainID}
+	queries := []bson.M{qtime, qstatus, qchainid}
 	return bson.M{"$and": queries}
 }
 
@@ -147,9 +166,22 @@ func UpdateRouterSwapResultStatus(fromChainID, txid string, logindex int, status
 
 // FindRouterSwapResult find router swap result
 func FindRouterSwapResult(fromChainID, txid string, logindex int) (*MgoSwapResult, error) {
+	if logindex == 0 {
+		return findFirstRouterSwapResult(fromChainID, txid)
+	}
 	key := getRouterSwapKey(fromChainID, txid, logindex)
 	result := &MgoSwapResult{}
 	err := collRouterSwapResult.FindId(key).One(result)
+	if err != nil {
+		return nil, mgoError(err)
+	}
+	return result, nil
+}
+
+func findFirstRouterSwapResult(fromChainID, txid string) (*MgoSwapResult, error) {
+	result := &MgoSwapResult{}
+	query := getChainAndTxIDQuery(fromChainID, txid)
+	err := collRouterSwapResult.Find(query).One(result)
 	if err != nil {
 		return nil, mgoError(err)
 	}
@@ -184,15 +216,15 @@ func FindRouterSwapResultsWithChainIDAndStatus(fromChainID string, status SwapSt
 func FindRouterSwapResults(fromChainID, address string, offset, limit int) ([]*MgoSwapResult, error) {
 	var queries []bson.M
 
-	if fromChainID != "" && fromChainID != allChainIDs {
-		queries = append(queries, bson.M{"fromChainID": fromChainID})
-	}
-
 	if address != "" && address != allAddresses {
 		if common.IsHexAddress(address) {
 			address = strings.ToLower(address)
 		}
 		queries = append(queries, bson.M{"from": address})
+	}
+
+	if fromChainID != "" && fromChainID != allChainIDs {
+		queries = append(queries, bson.M{"fromChainID": fromChainID})
 	}
 
 	var q *mgo.Query

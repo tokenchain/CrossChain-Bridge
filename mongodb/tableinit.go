@@ -44,8 +44,11 @@ func deinintCollections() {
 
 func initCollections() {
 	if params.IsRouterSwap() {
-		initCollection(tbRouterSwaps, &collRouterSwap, "fromChainID", "timestamp", "status")
-		initCollection(tbRouterSwapResults, &collRouterSwapResult, "fromChainID", "from", "timestamp")
+		initCollection(tbRouterSwaps, &collRouterSwap, "timestamp", "status", "fromChainID")
+		initCollection(tbRouterSwapResults, &collRouterSwapResult, "timestamp", "status", "fromChainID")
+		_ = collRouterSwap.EnsureIndexKey("txid")                      // speed find swap
+		_ = collRouterSwapResult.EnsureIndexKey("txid")                // speed find swap result
+		_ = collRouterSwapResult.EnsureIndexKey("from", "fromChainID") // speed find history
 	} else {
 		initCollection(tbSwapins, &collSwapin, "timestamp", "status")
 		initCollection(tbSwapouts, &collSwapout, "timestamp", "status")
