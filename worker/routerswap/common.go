@@ -20,11 +20,9 @@ type MatchTx struct {
 }
 
 func addInitialSwapResult(swapInfo *tokens.TxSwapInfo, status mongodb.SwapStatus) (err error) {
-	txid := swapInfo.Hash
-	swapType := tokens.RouterSwapType
 	swapResult := &mongodb.MgoSwapResult{
 		PairID:        swapInfo.PairID,
-		TxID:          txid,
+		TxID:          swapInfo.Hash,
 		TxTo:          swapInfo.TxTo,
 		TxHeight:      swapInfo.Height,
 		TxTime:        swapInfo.Timestamp,
@@ -32,29 +30,30 @@ func addInitialSwapResult(swapInfo *tokens.TxSwapInfo, status mongodb.SwapStatus
 		To:            swapInfo.To,
 		Bind:          swapInfo.Bind,
 		Value:         swapInfo.Value.String(),
-		SwapTx:        "",
-		SwapHeight:    0,
-		SwapTime:      0,
-		SwapValue:     "0",
-		SwapType:      uint32(swapType),
-		SwapNonce:     0,
-		Status:        status,
-		Timestamp:     now(),
-		Memo:          "",
 		ForNative:     swapInfo.ForNative,
 		ForUnderlying: swapInfo.ForUnderlying,
 		Token:         swapInfo.Token,
+		TokenID:       swapInfo.TokenID,
 		Path:          swapInfo.Path,
 		AmountOutMin:  swapInfo.AmountOutMin.String(),
 		FromChainID:   swapInfo.FromChainID.String(),
 		ToChainID:     swapInfo.ToChainID.String(),
 		LogIndex:      swapInfo.LogIndex,
+		SwapTx:        "",
+		SwapHeight:    0,
+		SwapTime:      0,
+		SwapValue:     "0",
+		SwapType:      uint32(tokens.RouterSwapType),
+		SwapNonce:     0,
+		Status:        status,
+		Timestamp:     now(),
+		Memo:          "",
 	}
 	err = mongodb.AddRouterSwapResult(swapResult)
 	if err != nil {
-		logWorkerError("add", "addInitialSwapResult failed", err, "chainid", swapInfo.FromChainID, "txid", txid, "logIndex", swapInfo.LogIndex)
+		logWorkerError("add", "addInitialSwapResult failed", err, "chainid", swapInfo.FromChainID, "txid", swapInfo.Hash, "logIndex", swapInfo.LogIndex)
 	} else {
-		logWorker("add", "addInitialSwapResult success", "chainid", swapInfo.FromChainID, "txid", txid, "logIndex", swapInfo.LogIndex)
+		logWorker("add", "addInitialSwapResult success", "chainid", swapInfo.FromChainID, "txid", swapInfo.Hash, "logIndex", swapInfo.LogIndex)
 	}
 	return err
 }

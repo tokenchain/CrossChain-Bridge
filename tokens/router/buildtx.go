@@ -92,10 +92,7 @@ func (b *Bridge) setDefaults(args *tokens.BuildTxArgs) (extra *tokens.EthExtraAr
 		if err != nil {
 			return nil, err
 		}
-		err = b.adjustSwapGasPrice(args.PairID, extra)
-		if err != nil {
-			return nil, err
-		}
+		b.adjustSwapGasPrice(extra)
 	}
 	if extra.Nonce == nil {
 		extra.Nonce, err = b.getAccountNonce(args.From)
@@ -105,16 +102,13 @@ func (b *Bridge) setDefaults(args *tokens.BuildTxArgs) (extra *tokens.EthExtraAr
 	}
 	if extra.Gas == nil {
 		extra.Gas = new(uint64)
-		*extra.Gas = b.getDefaultGasLimit(args.PairID)
+		*extra.Gas = b.getDefaultGasLimit()
 	}
 	return extra, nil
 }
 
-func (b *Bridge) getDefaultGasLimit(pairID string) (gasLimit uint64) {
-	tokenCfg := b.GetTokenConfig(pairID)
-	if tokenCfg != nil {
-		gasLimit = tokenCfg.DefaultGasLimit
-	}
+func (b *Bridge) getDefaultGasLimit() (gasLimit uint64) {
+	gasLimit = b.ChainConfig.DefaultGasLimit
 	if gasLimit == 0 {
 		gasLimit = 90000
 	}
@@ -132,17 +126,13 @@ func (b *Bridge) getGasPrice() (price *big.Int, err error) {
 	return nil, err
 }
 
-func (b *Bridge) adjustSwapGasPrice(pairID string, extra *tokens.EthExtraArgs) error {
-	tokenCfg := b.GetTokenConfig(pairID)
-	if tokenCfg == nil {
-		return tokens.ErrUnknownPairID
-	}
+func (b *Bridge) adjustSwapGasPrice(extra *tokens.EthExtraArgs) {
 	addPercent := b.ChainConfig.PlusGasPricePercentage
+	maxGasPriceFluctPercent := b.ChainConfig.MaxGasPriceFluctPercent
 	if addPercent > 0 {
 		extra.GasPrice.Mul(extra.GasPrice, big.NewInt(int64(100+addPercent)))
 		extra.GasPrice.Div(extra.GasPrice, big.NewInt(100))
 	}
-	maxGasPriceFluctPercent := b.ChainConfig.MaxGasPriceFluctPercent
 	if maxGasPriceFluctPercent > 0 {
 		if latestGasPrice != nil {
 			maxFluct := new(big.Int).Set(latestGasPrice)
@@ -155,7 +145,6 @@ func (b *Bridge) adjustSwapGasPrice(pairID string, extra *tokens.EthExtraArgs) e
 		}
 		latestGasPrice = extra.GasPrice
 	}
-	return nil
 }
 
 func (b *Bridge) getAccountNonce(from string) (nonceptr *uint64, err error) {

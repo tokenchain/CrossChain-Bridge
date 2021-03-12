@@ -9,6 +9,7 @@ import (
 
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/mongodb"
+	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 	"github.com/anyswap/CrossChain-Bridge/tokens/router"
 )
@@ -65,47 +66,31 @@ func findRouterSwapToSwap(chainID string) ([]*mongodb.MgoSwap, error) {
 	return mongodb.FindRouterSwapsWithChainIDAndStatus(chainID, status, septime)
 }
 
-func isSwapInBlacklist(swap *mongodb.MgoSwapResult) (isBlacked bool, err error) {
-	isBlacked, err = mongodb.QueryBlacklist(swap.From, swap.PairID)
-	if err != nil {
-		return isBlacked, err
-	}
-	if !isBlacked && swap.Bind != swap.From {
-		isBlacked, err = mongodb.QueryBlacklist(swap.Bind, swap.PairID)
-		if err != nil {
-			return isBlacked, err
-		}
-	}
-	return isBlacked, nil
-}
-
 func processRouterSwap(swap *mongodb.MgoSwap) (err error) {
-	chainID := swap.FromChainID
+	fromChainID := swap.FromChainID
+	toChainID := swap.ToChainID
 	txid := swap.TxID
 	logIndex := swap.LogIndex
 	bind := swap.Bind
 
-	res, err := mongodb.FindRouterSwapResult(chainID, txid, logIndex)
-	if err != nil {
-		return err
-	}
-
-	logWorker("swap", "start process router swap", "chainID", chainID, "txid", txid, "logIndex", logIndex, "status", swap.Status, "value", res.Value)
-
-	dstBridge := router.GetBridgeByChainID(swap.ToChainID)
-	if err != nil {
-		return err
-	}
-
-	isBlacked, err := isSwapInBlacklist(res)
-	if err != nil {
-		return err
-	}
-	if isBlacked {
-		logWorkerTrace("swap", "address is in blacklist", "chainID", chainID, "txid", txid, "logIndex", logIndex)
-		err = tokens.ErrAddressIsInBlacklist
-		_ = mongodb.UpdateRouterSwapStatus(chainID, txid, logIndex, mongodb.SwapInBlacklist, now(), err.Error())
+	if params.IsSwapInBlacklist(fromChainID, toChainID, swap.TokenID) {
+		logWorkerTrace("swap", "swap is in black list", "txid", txid, "logIndex", logIndex,
+			"fromChainID", fromChainID, "toChainID", toChainID, "token", swap.Token, "tokenID", swap.TokenID)
+		err = tokens.ErrSwapInBlacklist
+		_ = mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.SwapInBlacklist, now(), err.Error())
 		return nil
+	}
+
+	res, err := mongodb.FindRouterSwapResult(fromChainID, txid, logIndex)
+	if err != nil {
+		return err
+	}
+
+	logWorker("swap", "start process router swap", "fromChainID", fromChainID, "txid", txid, "logIndex", logIndex, "status", swap.Status, "value", res.Value)
+
+	dstBridge := router.GetBridgeByChainID(toChainID)
+	if err != nil {
+		return err
 	}
 
 	err = preventReswap(res)
@@ -120,7 +105,7 @@ func processRouterSwap(swap *mongodb.MgoSwap) (err error) {
 
 	args := &tokens.BuildTxArgs{
 		SwapInfo: tokens.SwapInfo{
-			PairID:   chainID,
+			PairID:   swap.PairID,
 			SwapID:   txid,
 			SwapType: tokens.RouterSwapType,
 			TxType:   tokens.SwapTxType(swap.TxType),

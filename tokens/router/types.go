@@ -23,6 +23,7 @@ type ChainConfig struct {
 	SwapDeadlineOffset      int64  `json:",omitempty"` // seconds
 	PlusGasPricePercentage  uint64 `json:",omitempty"`
 	MaxGasPriceFluctPercent uint64 `json:",omitempty"`
+	DefaultGasLimit         uint64 `json:",omitempty"`
 
 	// cached value
 	routerMPC       string
@@ -32,8 +33,6 @@ type ChainConfig struct {
 // TokenConfig struct
 type TokenConfig struct {
 	ID                string
-	Name              string
-	Symbol            string
 	Decimals          uint8
 	ContractAddress   string
 	MaximumSwap       float64 // whole unit (eg. BTC, ETH, FSN), not Satoshi
@@ -42,7 +41,6 @@ type TokenConfig struct {
 	SwapFeeRate       float64
 	MaximumSwapFee    float64
 	MinimumSwapFee    float64
-	DefaultGasLimit   uint64
 
 	// calced value
 	maxSwap          *big.Int

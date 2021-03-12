@@ -59,8 +59,6 @@ func StartAcceptSignJob() {
 				errWrongMsgContext,
 				tokens.ErrNoBridgeForChainID,
 				tokens.ErrRouterSwapNotSupport,
-				tokens.ErrUnknownPairID,
-				tokens.ErrNoBtcBridge,
 				tokens.ErrTxNotStable,
 				tokens.ErrTxNotFound:
 				logWorkerTrace("accept", "ignore sign", "keyID", keyID, "err", err)
@@ -125,7 +123,7 @@ func rebuildAndVerifyMsgHash(msgHash []string, args *tokens.BuildTxArgs) (err er
 			return err
 		}
 	default:
-		return fmt.Errorf("unknown swap type %v", args.SwapType)
+		return fmt.Errorf("unknown router swap type %v", args.SwapType)
 	}
 
 	txid := args.SwapID

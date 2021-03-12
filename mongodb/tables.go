@@ -33,6 +33,7 @@ type MgoSwap struct {
 	ForNative     bool     `bson:"forNative,omitempty"`
 	ForUnderlying bool     `bson:"forUnderlying,omitempty"`
 	Token         string   `bson:"token"`
+	TokenID       string   `bson:"tokenID"`
 	Path          []string `bson:"path,omitempty"`
 	AmountOutMin  string   `bson:"amountOutMin,omitempty"`
 	FromChainID   string   `bson:"fromChainID"`
@@ -66,6 +67,7 @@ type MgoSwapResult struct {
 	ForNative     bool     `bson:"forNative,omitempty"`
 	ForUnderlying bool     `bson:"forUnderlying,omitempty"`
 	Token         string   `bson:"token"`
+	TokenID       string   `bson:"tokenID"`
 	Path          []string `bson:"path,omitempty"`
 	AmountOutMin  string   `bson:"amountOutMin,omitempty"`
 	FromChainID   string   `bson:"fromChainID"`

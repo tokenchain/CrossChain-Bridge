@@ -65,6 +65,11 @@ func IsRouterSwap() bool {
 	return strings.EqualFold(routerConfig.Identifier, RouterSwapIdentifier)
 }
 
+// IsSwapInBlacklist is chain or token blacklisted
+func IsSwapInBlacklist(fromChainID, toChainID, fromToken string) bool {
+	return true
+}
+
 // LoadRouterConfig load router swap config
 func LoadRouterConfig(configFile string, isServer bool) *RouterConfig {
 	if configFile == "" {

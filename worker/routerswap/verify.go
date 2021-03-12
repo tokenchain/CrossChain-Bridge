@@ -2,6 +2,7 @@ package routerswap
 
 import (
 	"github.com/anyswap/CrossChain-Bridge/mongodb"
+	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 	"github.com/anyswap/CrossChain-Bridge/tokens/router"
 )
@@ -30,24 +31,15 @@ func StartVerifyJob() {
 	}
 }
 
-func isInBlacklist(swapInfo *tokens.TxSwapInfo) (isBlacked bool, err error) {
-	isBlacked, err = mongodb.QueryBlacklist(swapInfo.From, swapInfo.PairID)
-	if err != nil {
-		return isBlacked, err
-	}
-	if !isBlacked && swapInfo.Bind != swapInfo.From {
-		isBlacked, err = mongodb.QueryBlacklist(swapInfo.Bind, swapInfo.PairID)
-		if err != nil {
-			return isBlacked, err
-		}
-	}
-	return isBlacked, nil
-}
-
 func processRouterSwapVerify(swap *mongodb.MgoSwap) (err error) {
 	fromChainID := swap.FromChainID
 	txid := swap.TxID
 	logIndex := swap.LogIndex
+
+	if params.IsSwapInBlacklist(fromChainID, swap.ToChainID, swap.TokenID) {
+		err = tokens.ErrSwapInBlacklist
+		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.SwapInBlacklist, now(), err.Error())
+	}
 
 	bridge := router.GetBridgeByChainID(fromChainID)
 	swapInfo, err := bridge.VerifyRouterSwapTx(txid, logIndex, false)
@@ -59,14 +51,7 @@ func processRouterSwapVerify(swap *mongodb.MgoSwap) (err error) {
 		err = tokens.ErrTxBeforeInitialHeight
 		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxVerifyFailed, now(), err.Error())
 	}
-	isBlacked, errf := isInBlacklist(swapInfo)
-	if errf != nil {
-		return errf
-	}
-	if isBlacked {
-		err = tokens.ErrAddressIsInBlacklist
-		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.SwapInBlacklist, now(), err.Error())
-	}
+
 	return updateSwapStatus(bridge, fromChainID, txid, logIndex, swapInfo, err)
 }
 

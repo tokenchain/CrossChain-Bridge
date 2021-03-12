@@ -101,7 +101,8 @@ func (b *Bridge) VerifyRouterSwapTx(txHash string, logIndex int, allowUnstable b
 			"from", swapInfo.From, "to", swapInfo.To, "bind", swapInfo.Bind, "value", swapInfo.Value,
 			"txid", txHash, "logIndex", logIndex, "height", swapInfo.Height, "timestamp", swapInfo.Timestamp,
 			"fromChainID", swapInfo.FromChainID, "toChainID", swapInfo.ToChainID,
-			"token", swapInfo.Token, "forNative", swapInfo.ForNative, "forUnderlying", swapInfo.ForUnderlying)
+			"token", swapInfo.Token, "tokenID", swapInfo.TokenID,
+			"forNative", swapInfo.ForNative, "forUnderlying", swapInfo.ForUnderlying)
 	}
 
 	return swapInfo, nil
@@ -165,8 +166,14 @@ func (b *Bridge) verifyRouterSwapTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.
 	}
 	if err != nil {
 		log.Debug(b.ChainConfig.BlockChain+" b.verifyRouterSwapTxLog fail", "tx", swapInfo.Hash, "logIndex", rlog.Index, "err", err)
+		return err
 	}
-	return err
+	tokenCfg := b.GetTokenConfig(swapInfo.Token)
+	if tokenCfg == nil {
+		return tokens.ErrMissTokenConfig
+	}
+	swapInfo.TokenID = tokenCfg.ID
+	return nil
 }
 
 func (b *Bridge) parseRouterSwapoutTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.RPCLog) error {
@@ -211,7 +218,7 @@ func (b *Bridge) parseRouterSwapTradeTxLog(swapInfo *tokens.TxSwapInfo, rlog *ty
 
 	swapInfo.Token = path[0]
 	swapInfo.Path = path[1:]
-	if len(swapInfo.Path) < 2 {
+	if len(swapInfo.Path) == 0 {
 		return tokens.ErrTxWithWrongPath
 	}
 	return nil

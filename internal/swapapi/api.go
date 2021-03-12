@@ -390,6 +390,7 @@ func RegisterRouterSwap(fromChainID, txid string) (*MapIntResult, error) {
 			ForNative:     swapInfo.ForNative,
 			ForUnderlying: swapInfo.ForUnderlying,
 			Token:         swapInfo.Token,
+			TokenID:       swapInfo.TokenID,
 			Path:          swapInfo.Path,
 			AmountOutMin:  swapInfo.AmountOutMin.String(),
 			FromChainID:   swapInfo.FromChainID.String(),

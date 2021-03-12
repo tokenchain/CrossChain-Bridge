@@ -177,6 +177,7 @@ type RouterSwapInfo struct {
 	ForNative     bool     `json:"forNative,omitempty"`
 	ForUnderlying bool     `json:"forUnderlying,omitempty"`
 	Token         string   `json:"token"`
+	TokenID       string   `json:"tokenID"`
 	Path          []string `json:"path,omitempty"`
 	AmountOutMin  *big.Int `json:"amountOutMin,omitempty"`
 	FromChainID   *big.Int `json:"fromChainID"`

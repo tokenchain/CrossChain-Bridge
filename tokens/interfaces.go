@@ -20,6 +20,7 @@ var (
 	ErrBuildSwapTxInWrongEndpoint    = errors.New("build swap in/out tx in wrong endpoint")
 	ErrTxBeforeInitialHeight         = errors.New("transaction before initial block height")
 	ErrAddressIsInBlacklist          = errors.New("address is in black list")
+	ErrSwapInBlacklist               = errors.New("swap is in black list")
 	ErrRouterSwapNotSupport          = errors.New("bridge does not support router swap")
 	ErrNoBridgeForChainID            = errors.New("no bridge for chain id")
 
