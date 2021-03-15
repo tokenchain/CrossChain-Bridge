@@ -3,6 +3,8 @@ package params
 import (
 	"errors"
 	"fmt"
+	"math/big"
+	"strings"
 
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/common/hexutil"
@@ -30,11 +32,9 @@ func (config *RouterConfig) CheckConfig(isServer bool) (err error) {
 	}
 	log.Info("check identifier pass", "identifier", config.Identifier, "isServer", isServer)
 	if isServer {
-		if config.MongoDB == nil {
-			return errors.New("server must config 'MongoDB'")
-		}
-		if config.APIServer == nil {
-			return errors.New("server must config 'APIServer'")
+		err = config.Server.CheckConfig()
+		if err != nil {
+			return err
 		}
 	}
 
@@ -45,7 +45,6 @@ func (config *RouterConfig) CheckConfig(isServer bool) (err error) {
 	if err != nil {
 		return err
 	}
-	log.Info("check dcrm config pass", "isServer", isServer)
 
 	if config.Onchain == nil {
 		return errors.New("server must config 'Onchain'")
@@ -54,8 +53,40 @@ func (config *RouterConfig) CheckConfig(isServer bool) (err error) {
 	if err != nil {
 		return err
 	}
-	log.Info("check onchain config pass")
 
+	return nil
+}
+
+// CheckConfig of router server
+func (s *RouterServerConfig) CheckConfig() error {
+	if s.MongoDB == nil {
+		return errors.New("server must config 'MongoDB'")
+	}
+	if s.APIServer == nil {
+		return errors.New("server must config 'APIServer'")
+	}
+	for _, chainID := range s.ChainIDBlackList {
+		biChainID, ok := new(big.Int).SetString(chainID, 0)
+		if !ok {
+			return fmt.Errorf("wrong chain id '%v' in black list", chainID)
+		}
+		key := biChainID.String()
+		if _, exist := chainIDBlacklistMap[key]; exist {
+			return fmt.Errorf("duplicate chain id '%v' in black list", key)
+		}
+		chainIDBlacklistMap[key] = struct{}{}
+	}
+	for _, tokenID := range s.TokenIDBlackList {
+		if tokenID == "" {
+			return errors.New("empty token id in black list")
+		}
+		key := strings.ToLower(tokenID)
+		if _, exist := tokenIDBlacklistMap[key]; exist {
+			return fmt.Errorf("duplicate token id '%v' in black list", key)
+		}
+		tokenIDBlacklistMap[key] = struct{}{}
+	}
+	log.Info("check server config success")
 	return nil
 }
 

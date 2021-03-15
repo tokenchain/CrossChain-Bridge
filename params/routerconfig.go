@@ -16,18 +16,24 @@ const (
 
 var (
 	routerConfig *RouterConfig
+
+	chainIDBlacklistMap = make(map[string]struct{})
+	tokenIDBlacklistMap = make(map[string]struct{})
 )
 
 // RouterServerConfig only for server
 type RouterServerConfig struct {
-	Admins    []string         `toml:",omitempty" json:",omitempty"`
-	MongoDB   *MongoDBConfig   `toml:",omitempty" json:",omitempty"`
-	APIServer *APIServerConfig `toml:",omitempty" json:",omitempty"`
+	Admins    []string
+	MongoDB   *MongoDBConfig
+	APIServer *APIServerConfig
+
+	ChainIDBlackList []string
+	TokenIDBlackList []string
 }
 
 // RouterConfig config
 type RouterConfig struct {
-	*RouterServerConfig `toml:",omitempty" json:",omitempty"`
+	Server *RouterServerConfig `toml:",omitempty" json:",omitempty"`
 
 	Identifier string
 	Onchain    *OnchainConfig `toml:",omitempty" json:",omitempty"`
@@ -47,12 +53,12 @@ func GetRouterConfig() *RouterConfig {
 
 // HasRouterAdmin has admin
 func HasRouterAdmin() bool {
-	return len(routerConfig.Admins) != 0
+	return len(routerConfig.Server.Admins) != 0
 }
 
 // IsRouterAdmin is admin
 func IsRouterAdmin(account string) bool {
-	for _, admin := range routerConfig.Admins {
+	for _, admin := range routerConfig.Server.Admins {
 		if strings.EqualFold(account, admin) {
 			return true
 		}
@@ -65,9 +71,23 @@ func IsRouterSwap() bool {
 	return strings.EqualFold(routerConfig.Identifier, RouterSwapIdentifier)
 }
 
+// IsChainIDInBlackList is chain id in black list
+func IsChainIDInBlackList(chainID string) bool {
+	_, exist := chainIDBlacklistMap[chainID]
+	return exist
+}
+
+// IsTokenIDInBlackList is token id in black list
+func IsTokenIDInBlackList(tokenID string) bool {
+	_, exist := tokenIDBlacklistMap[strings.ToLower(tokenID)]
+	return exist
+}
+
 // IsSwapInBlacklist is chain or token blacklisted
-func IsSwapInBlacklist(fromChainID, toChainID, fromToken string) bool {
-	return true
+func IsSwapInBlacklist(fromChainID, toChainID, tokenID string) bool {
+	return IsChainIDInBlackList(fromChainID) ||
+		IsChainIDInBlackList(toChainID) ||
+		IsTokenIDInBlackList(tokenID)
 }
 
 // LoadRouterConfig load router swap config
@@ -85,7 +105,7 @@ func LoadRouterConfig(configFile string, isServer bool) *RouterConfig {
 	}
 
 	if !isServer {
-		config.RouterServerConfig = nil
+		config.Server = nil
 	}
 
 	var bs []byte

@@ -122,6 +122,7 @@ func (c *DcrmNodeConfig) CheckConfig(isServer bool) (err error) {
 	if isServer && len(c.SignGroups) == 0 {
 		return errors.New("swap server dcrm node must config 'SignGroups'")
 	}
+	log.Info("check dcrm config pass", "isServer", isServer)
 	return nil
 }
 

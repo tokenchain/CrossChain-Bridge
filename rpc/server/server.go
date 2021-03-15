@@ -22,7 +22,7 @@ func StartAPIServer() {
 	router := mux.NewRouter()
 	var apiServer *params.APIServerConfig
 	if params.IsRouterSwap() {
-		apiServer = params.GetRouterConfig().APIServer
+		apiServer = params.GetRouterConfig().Server.APIServer
 		initRouterSwapRouter(router)
 	} else {
 		apiServer = params.GetConfig().APIServer

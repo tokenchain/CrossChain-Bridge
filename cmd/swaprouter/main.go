@@ -64,7 +64,7 @@ func swaprouter(ctx *cli.Context) error {
 	config := params.LoadRouterConfig(configFile, isServer)
 
 	if isServer {
-		dbConfig := config.MongoDB
+		dbConfig := config.Server.MongoDB
 		mongodb.MongoServerInit([]string{dbConfig.DBURL}, dbConfig.DBName, dbConfig.UserName, dbConfig.Password)
 		worker.StartRouterSwapWork(true)
 		time.Sleep(100 * time.Millisecond)

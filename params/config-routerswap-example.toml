@@ -2,33 +2,34 @@
 Identifier = "routerswap"
 
 
-# administrators who can do admin work (server only)
+# router sever config (server only)
+[Server]
+# administrators who can do admin work
 Admins = [
 	"0x3dfaef310a1044fd7d96750b42b44cf3775c00bf",
 	"0x46cbe22b687d4b72c8913e4784dfe5b20fdc2b0e"
 ]
 
+# chain id black list of string array
+ChainIDBlackList = []
 
-# modgodb database connection config (server only)
-[MongoDB]
+# token id black list of string array
+TokenIDBlackList = []
+
+# modgodb database connection config
+[Server.MongoDB]
 DBURL = "localhost:27017"
 DBName = "databasename"
 UserName = "username"
 Password = "password"
 
-
-# bridge API service (server only)
-[APIServer]
+# bridge API service
+[Server.APIServer]
 # listen port
 Port = 11556
 # CORS config
 AllowedOrigins = []
 
-
-# oracle config (oracle only)
-[Oracle]
-# post swap register RPC requests to this server
-ServerAPIAddress = "http://127.0.0.1:11556/rpc"
 
 [OnChain]
 Contract = "0x61b8c4d6d28d5f7edadbea5456db3b4f7f836b64"
