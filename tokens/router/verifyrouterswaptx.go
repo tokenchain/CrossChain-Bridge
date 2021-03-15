@@ -207,9 +207,12 @@ func (b *Bridge) parseRouterSwapTradeTxLog(swapInfo *tokens.TxSwapInfo, rlog *ty
 	swapInfo.ForNative = forNative
 	swapInfo.From = common.BytesToAddress(logTopics[1].Bytes()).String()
 	swapInfo.Bind = common.BytesToAddress(logTopics[2].Bytes()).String()
-	path, err := parseIndexedAddressSlice(logData, 0)
+	path, err := parseAddressSliceInLogData(logData, 0)
 	if err != nil {
 		return err
+	}
+	if len(swapInfo.Path) < 2 {
+		return tokens.ErrTxWithWrongPath
 	}
 	swapInfo.Value = common.GetBigInt(logData, 32, 32)
 	swapInfo.AmountOutMin = common.GetBigInt(logData, 64, 32)
@@ -218,13 +221,10 @@ func (b *Bridge) parseRouterSwapTradeTxLog(swapInfo *tokens.TxSwapInfo, rlog *ty
 
 	swapInfo.Token = path[0]
 	swapInfo.Path = path[1:]
-	if len(swapInfo.Path) == 0 {
-		return tokens.ErrTxWithWrongPath
-	}
-	return nil
+	return chekcAndAmendSwapTradePath(swapInfo)
 }
 
-func parseIndexedAddressSlice(logData []byte, pos uint64) ([]string, error) {
+func parseAddressSliceInLogData(logData []byte, pos uint64) ([]string, error) {
 	offset, overflow := common.GetUint64(logData, pos, 32)
 	if overflow {
 		return nil, tokens.ErrTxWithWrongLogData
@@ -242,4 +242,10 @@ func parseIndexedAddressSlice(logData []byte, pos uint64) ([]string, error) {
 		path[i] = common.BytesToAddress(common.GetData(logData, offset, 32)).String()
 	}
 	return path, nil
+}
+
+// amend trade path [0] if missing,
+// then check path exists in pairs of dest chain
+func chekcAndAmendSwapTradePath(swapInfo *tokens.TxSwapInfo) error {
+	return nil // TODO
 }
