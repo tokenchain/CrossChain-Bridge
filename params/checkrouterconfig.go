@@ -90,9 +90,16 @@ func (s *RouterServerConfig) CheckConfig() error {
 	return nil
 }
 
-// CheckConfig check onchain config
+// CheckConfig check onchain config storing chain and token configs
 func (c *OnchainConfig) CheckConfig() error {
-	callOwnerData := common.FromHex("0x8da5cb5b")
+	log.Info("start check onchain config connection")
+	if c.Contract == "" {
+		return errors.New("onchain must config 'Contract'")
+	}
+	if len(c.APIAddress) == 0 {
+		return errors.New("onchain must config 'APIAddress'")
+	}
+	callOwnerData := common.FromHex("0x025e7c270000000000000000000000000000000000000000000000000000000000000000")
 	for _, apiAddress := range c.APIAddress {
 		res, err := CallContractWithGateway(apiAddress, c.Contract, callOwnerData, "latest")
 		if err != nil {

@@ -15,7 +15,7 @@ const (
 )
 
 var (
-	routerConfig *RouterConfig
+	routerConfig = &RouterConfig{}
 
 	chainIDBlacklistMap = make(map[string]struct{})
 	tokenIDBlacklistMap = make(map[string]struct{})

@@ -70,7 +70,7 @@ func swaprouter(ctx *cli.Context) error {
 		time.Sleep(100 * time.Millisecond)
 		rpcserver.StartAPIServer()
 	} else {
-		worker.StartWork(false)
+		worker.StartRouterSwapWork(false)
 	}
 
 	<-exitCh

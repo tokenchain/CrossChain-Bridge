@@ -63,6 +63,7 @@ func Init(dcrmConfig *params.DcrmConfig, isServer bool) {
 	initAllEnodes()
 
 	verifyInitiators(dcrmConfig.Initiators)
+	log.Info("init dcrm success")
 }
 
 // setDefaultDcrmNodeInfo set default dcrm node info

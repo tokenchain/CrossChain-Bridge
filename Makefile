@@ -21,7 +21,7 @@ all:
 	@echo "Find binaries in \"$(GOBIN)\" directory."
 	@echo ""
 	@echo "Copy example config files to \"$(GOBIN)\" directory"
-	@cp -v params/config*-example.toml $(GOBIN)
+	@cp -uv params/config*-example.toml $(GOBIN)
 
 test: all
 	$(GOCMD) test ./...

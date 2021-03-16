@@ -1,6 +1,9 @@
 package router
 
 import (
+	"github.com/anyswap/CrossChain-Bridge/dcrm"
+	"github.com/anyswap/CrossChain-Bridge/log"
+	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/types"
 )
 
@@ -31,4 +34,10 @@ func GetBridgeByChainID(chainID string) *Bridge {
 
 // InitRouterBridges init router bridges
 func InitRouterBridges(isServer bool) {
+	log.Info("start init router bridges")
+
+	cfg := params.GetRouterConfig()
+	dcrm.Init(cfg.Dcrm, isServer)
+
+	log.Info("init router bridges success", "isServer", isServer)
 }

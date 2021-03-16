@@ -16,10 +16,10 @@ type ChainConfig struct {
 	BlockChain              string
 	ChainID                 string
 	Confirmations           uint64
-	InitialHeight           uint64
-	WaitTimeToReplace       int64 // seconds
-	MaxReplaceCount         int
 	RouterContract          string
+	InitialHeight           uint64 `json:",omitempty"`
+	WaitTimeToReplace       int64  `json:",omitempty"` // seconds
+	MaxReplaceCount         int    `json:",omitempty"`
 	SwapDeadlineOffset      int64  `json:",omitempty"` // seconds
 	PlusGasPricePercentage  uint64 `json:",omitempty"`
 	MaxGasPriceFluctPercent uint64 `json:",omitempty"`

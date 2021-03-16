@@ -2,6 +2,7 @@ package router
 
 import (
 	"bytes"
+	"errors"
 	"strings"
 
 	"github.com/anyswap/CrossChain-Bridge/common"
@@ -18,6 +19,8 @@ var (
 	LogAnySwapTradeTokensForTokensTopic = common.FromHex("0xfea6abdf4fd32f20966dff7619354cd82cd43dc78a3bee479f04c74dbfc585b3")
 	// LogAnySwapTradeTokensForNative(address[] path, address from, address to, uint amountIn, uint amountOutMin, uint fromChainID, uint toChainID);
 	LogAnySwapTradeTokensForNativeTopic = common.FromHex("0x278277e0209c347189add7bd92411973b5f6b8644f7ac62ea1be984ce993f8f4")
+
+	errParseDataError = errors.New("parse data error")
 )
 
 // RegisterRouterSwapTx impl
@@ -183,7 +186,7 @@ func (b *Bridge) parseRouterSwapoutTxLog(swapInfo *tokens.TxSwapInfo, rlog *type
 	}
 	logData := *rlog.Data
 	if len(logData) != 128 {
-		return tokens.ErrTxWithWrongLogData
+		return errParseDataError
 	}
 	swapInfo.Token = common.BytesToAddress(logTopics[1].Bytes()).String()
 	swapInfo.From = common.BytesToAddress(logTopics[2].Bytes()).String()
@@ -202,12 +205,12 @@ func (b *Bridge) parseRouterSwapTradeTxLog(swapInfo *tokens.TxSwapInfo, rlog *ty
 	}
 	logData := *rlog.Data
 	if len(logData) < 192 {
-		return tokens.ErrTxWithWrongLogData
+		return errParseDataError
 	}
 	swapInfo.ForNative = forNative
 	swapInfo.From = common.BytesToAddress(logTopics[1].Bytes()).String()
 	swapInfo.Bind = common.BytesToAddress(logTopics[2].Bytes()).String()
-	path, err := parseAddressSliceInLogData(logData, 0)
+	path, err := ParseAddressSliceInData(logData, 0)
 	if err != nil {
 		return err
 	}
@@ -222,26 +225,6 @@ func (b *Bridge) parseRouterSwapTradeTxLog(swapInfo *tokens.TxSwapInfo, rlog *ty
 	swapInfo.Token = path[0]
 	swapInfo.Path = path[1:]
 	return chekcAndAmendSwapTradePath(swapInfo)
-}
-
-func parseAddressSliceInLogData(logData []byte, pos uint64) ([]string, error) {
-	offset, overflow := common.GetUint64(logData, pos, 32)
-	if overflow {
-		return nil, tokens.ErrTxWithWrongLogData
-	}
-	length, overflow := common.GetUint64(logData, offset, 32)
-	if overflow {
-		return nil, tokens.ErrTxWithWrongLogData
-	}
-	if uint64(len(logData)) < offset+(length+1)*32 {
-		return nil, tokens.ErrTxWithWrongLogData
-	}
-	path := make([]string, length)
-	for i := uint64(0); i < length; i++ {
-		offset += 32
-		path[i] = common.BytesToAddress(common.GetData(logData, offset, 32)).String()
-	}
-	return path, nil
 }
 
 // amend trade path [0] if missing,

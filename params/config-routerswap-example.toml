@@ -32,8 +32,8 @@ AllowedOrigins = []
 
 
 [OnChain]
-Contract = "0x61b8c4d6d28d5f7edadbea5456db3b4f7f836b64"
-APIAddress = ["http://47.107.50.83:3002"]
+Contract = "0x77bc292e465cfff6dda1fd5ca67a2a1320d2657e"
+APIAddress = ["http://127.0.0.1:8711"]
 
 # DCRM config
 [Dcrm]
