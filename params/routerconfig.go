@@ -36,8 +36,9 @@ type RouterConfig struct {
 	Server *RouterServerConfig `toml:",omitempty" json:",omitempty"`
 
 	Identifier string
-	Onchain    *OnchainConfig `toml:",omitempty" json:",omitempty"`
-	Dcrm       *DcrmConfig    `toml:",omitempty" json:",omitempty"`
+	Onchain    *OnchainConfig
+	Gateways   map[string][]string // key is chain ID
+	Dcrm       *DcrmConfig
 }
 
 // OnchainConfig struct

@@ -224,11 +224,15 @@ func (b *Bridge) parseRouterSwapTradeTxLog(swapInfo *tokens.TxSwapInfo, rlog *ty
 
 	swapInfo.Token = path[0]
 	swapInfo.Path = path[1:]
-	return chekcAndAmendSwapTradePath(swapInfo)
+	return b.chekcAndAmendSwapTradePath(swapInfo)
 }
 
 // amend trade path [0] if missing,
 // then check path exists in pairs of dest chain
-func chekcAndAmendSwapTradePath(swapInfo *tokens.TxSwapInfo) error {
+func (b *Bridge) chekcAndAmendSwapTradePath(swapInfo *tokens.TxSwapInfo) error {
+	dstBridge := GetBridgeByChainID(swapInfo.ToChainID.String())
+	if dstBridge == nil {
+		return tokens.ErrNoBridgeForChainID
+	}
 	return nil // TODO
 }
