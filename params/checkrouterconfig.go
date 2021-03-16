@@ -99,20 +99,20 @@ func (c *OnchainConfig) CheckConfig() error {
 	if len(c.APIAddress) == 0 {
 		return errors.New("onchain must config 'APIAddress'")
 	}
-	callOwnerData := common.FromHex("0x025e7c270000000000000000000000000000000000000000000000000000000000000000")
+	callGetChainIDCountData := common.FromHex("0x7b9fb005")
 	for _, apiAddress := range c.APIAddress {
-		res, err := CallContractWithGateway(apiAddress, c.Contract, callOwnerData, "latest")
+		res, err := CallContractWithGateway(apiAddress, c.Contract, callGetChainIDCountData, "latest")
 		if err != nil {
 			log.Warn("check onchain config connection failed", "gateway", apiAddress, "err", err)
 			continue
 		}
-		owner := common.HexToAddress(res)
-		if owner == (common.Address{}) {
-			continue
+		chainIDCount, _ := common.GetUint64FromStr(res)
+		if chainIDCount == 0 {
+			return errors.New("no chain ID in onchain config")
 		}
-		log.Info("check onchain config connection success")
+		log.Info("check onchain config connection success", "chainIDCount", chainIDCount)
 		return nil
 	}
-	log.Error("wrong onchain config", "gateway", c.APIAddress, "contract", c.Contract)
+	log.Error("check onchain config connection failed", "gateway", c.APIAddress, "contract", c.Contract)
 	return errors.New("check onchain config connection failed")
 }

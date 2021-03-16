@@ -44,6 +44,9 @@ func GetChainConfig(chainID *big.Int) (chainCfg *ChainConfig, err error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(hexData) == 0 {
+		return nil, nil
+	}
 	err = json.Unmarshal(hexData, &chainCfg)
 	if err != nil {
 		return nil, err
@@ -63,6 +66,9 @@ func getTokenConfig(funcHash []byte, chainID *big.Int, token string) (tokenCfg *
 	hexData, err := ParseBytesInData(common.FromHex(res), 0)
 	if err != nil {
 		return nil, err
+	}
+	if len(hexData) == 0 {
+		return nil, nil
 	}
 	err = json.Unmarshal(hexData, &tokenCfg)
 	if err != nil {
