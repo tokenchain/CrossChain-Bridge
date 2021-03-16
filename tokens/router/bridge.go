@@ -63,6 +63,7 @@ func InitRouterBridges(isServer bool) {
 			bridge.initTokenConfig(tokenID, chainID)
 		}
 
+		bridge.Signer = types.MakeSigner("EIP155", chainID)
 		RouterBridges[chainID.String()] = bridge
 	}
 	printPeerTokens()
@@ -85,6 +86,11 @@ func (b *Bridge) initGatewayConfig(chainID *big.Int) {
 	b.SetGatewayConfig(&GatewayConfig{
 		APIAddress: apiAddrs,
 	})
+	latestBlock, err := b.GetLatestBlockNumber()
+	if err != nil {
+		log.Fatal("get lastest block number failed", "chainID", chainID, "err", err)
+	}
+	log.Infof(">>> [%5v] lastest block number is %v", chainID, latestBlock)
 	log.Infof(">>> [%5v] init gateway config success", chainID)
 }
 
