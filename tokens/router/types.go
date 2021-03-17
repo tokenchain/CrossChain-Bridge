@@ -90,8 +90,7 @@ func (c *ChainConfig) GetRouterMPCPubkey() string {
 }
 
 // CheckConfig check token config
-//nolint:gocyclo // keep TokenConfig check as whole
-func (c *TokenConfig) CheckConfig(isSrc bool) error {
+func (c *TokenConfig) CheckConfig() error {
 	if c.ID == "" {
 		return errors.New("token must config 'ID'")
 	}
@@ -146,14 +145,14 @@ func (c *TokenConfig) calcAndStoreValue() {
 	c.bigValThreshhold = toBits(c.BigValueThreshold+0.0001, c.Decimals)
 }
 
-// VerifyDcrmPublicKey verify dcrm address and public key is matching
-func VerifyDcrmPublicKey(dcrmAddress, dcrmPubkey string) error {
-	if !common.IsHexAddress(dcrmAddress) {
-		return fmt.Errorf("wrong dcrm address '%v'", dcrmAddress)
+// VerifyMPCPubKey verify mpc address and public key is matching
+func VerifyMPCPubKey(mpcAddress, mpcPubkey string) error {
+	if !common.IsHexAddress(mpcAddress) {
+		return fmt.Errorf("wrong mpc address '%v'", mpcAddress)
 	}
-	pkBytes := common.FromHex(dcrmPubkey)
+	pkBytes := common.FromHex(mpcPubkey)
 	if len(pkBytes) != 65 || pkBytes[0] != 4 {
-		return fmt.Errorf("wrong dcrm public key '%v'", dcrmPubkey)
+		return fmt.Errorf("wrong mpc public key '%v'", mpcPubkey)
 	}
 	pubKey := ecdsa.PublicKey{
 		Curve: crypto.S256(),
@@ -161,8 +160,8 @@ func VerifyDcrmPublicKey(dcrmAddress, dcrmPubkey string) error {
 		Y:     new(big.Int).SetBytes(pkBytes[33:65]),
 	}
 	pubAddr := crypto.PubkeyToAddress(pubKey)
-	if !strings.EqualFold(pubAddr.String(), dcrmAddress) {
-		return fmt.Errorf("dcrm address %v and public key address %v is not match", dcrmAddress, pubAddr.String())
+	if !strings.EqualFold(pubAddr.String(), mpcAddress) {
+		return fmt.Errorf("mpc address %v and public key address %v is not match", mpcAddress, pubAddr.String())
 	}
 	return nil
 }

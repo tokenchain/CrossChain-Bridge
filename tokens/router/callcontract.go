@@ -83,6 +83,16 @@ func (b *Bridge) GetTokenSupply(tokenType, tokenAddress string) (*big.Int, error
 	}
 }
 
+// GetRouterMPC get router contract's mpc address
+func (b *Bridge) GetRouterMPC(routerContract string) (string, error) {
+	data := common.FromHex("0xf75c2664")
+	res, err := b.CallContract(routerContract, data, "latest")
+	if err != nil {
+		return "", err
+	}
+	return ParseStringInData(common.FromHex(res), 0)
+}
+
 func parseSliceInData(data []byte, pos uint64) (offset, length uint64, err error) {
 	offset, overflow := common.GetUint64(data, pos, 32)
 	if overflow {

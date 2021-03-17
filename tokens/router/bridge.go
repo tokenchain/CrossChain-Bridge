@@ -106,8 +106,24 @@ func (b *Bridge) initChainConfig(chainID *big.Int) {
 	if chainID.String() != chainCfg.ChainID {
 		log.Fatal("verify chain ID mismatch", "inconfig", chainCfg.ChainID, "inchainids", chainID)
 	}
+	if err = chainCfg.CheckConfig(); err != nil {
+		log.Fatal("check chain config failed", "chainID", chainID, "err", err)
+	}
+	routerMPC, err := b.GetRouterMPC(chainCfg.RouterContract)
+	if err != nil {
+		log.Fatal("get router mpc address failed", "routerContract", chainCfg.RouterContract, "err", err)
+	}
+	routerMPCPubkey, err := GetMPCPubkey(routerMPC)
+	if err != nil {
+		log.Fatal("get mpc public key failed", "mpc", routerMPC, "err", err)
+	}
+	if err = VerifyMPCPubKey(routerMPC, routerMPCPubkey); err != nil {
+		log.Fatal("verify mpc public key failed", "mpc", routerMPC, "mpcPubkey", routerMPCPubkey, "err", err)
+	}
+	chainCfg.routerMPC = routerMPC
+	chainCfg.routerMPCPubkey = routerMPCPubkey
 	b.SetChainConfig(chainCfg)
-	log.Infof(">>> [%5v] init chain config success", chainID)
+	log.Infof(">>> [%5v] init chain config success. router contract is %v, mpc address is %v", chainID, chainCfg.RouterContract, routerMPC)
 }
 
 func (b *Bridge) initSigner(chainID *big.Int) {
@@ -146,6 +162,9 @@ func (b *Bridge) initTokenConfig(tokenID string, chainID *big.Int) {
 	}
 	if tokenID != tokenCfg.ID {
 		log.Fatal("verify token ID mismatch", "chainID", chainID, "inconfig", tokenCfg.ID, "intokenids", tokenID)
+	}
+	if err = tokenCfg.CheckConfig(); err != nil {
+		log.Fatal("check token config failed", "tokenID", tokenID, "chainID", chainID, "tokenAddr", tokenAddr, "err", err)
 	}
 	b.SetTokenConfig(tokenAddr, tokenCfg)
 	log.Info(fmt.Sprintf(">>> [%5v] init '%v' token config success", chainID, tokenID), "tokenAddr", tokenAddr, "decimals", tokenCfg.Decimals)
