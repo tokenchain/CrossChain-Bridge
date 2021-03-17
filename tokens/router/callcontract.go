@@ -93,6 +93,16 @@ func (b *Bridge) GetRouterMPC(routerContract string) (string, error) {
 	return ParseStringInData(common.FromHex(res), 0)
 }
 
+// GetVaultAddress get token's vault (router) address
+func (b *Bridge) GetVaultAddress(tokenAddr string) (string, error) {
+	data := common.FromHex("0xfbfa77cf")
+	res, err := b.CallContract(tokenAddr, data, "latest")
+	if err != nil {
+		return "", err
+	}
+	return ParseStringInData(common.FromHex(res), 0)
+}
+
 func parseSliceInData(data []byte, pos uint64) (offset, length uint64, err error) {
 	offset, overflow := common.GetUint64(data, pos, 32)
 	if overflow {

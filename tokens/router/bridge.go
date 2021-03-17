@@ -166,6 +166,13 @@ func (b *Bridge) initTokenConfig(tokenID string, chainID *big.Int) {
 	if err = tokenCfg.CheckConfig(); err != nil {
 		log.Fatal("check token config failed", "tokenID", tokenID, "chainID", chainID, "tokenAddr", tokenAddr, "err", err)
 	}
+	vaultAddress, err := b.GetVaultAddress(tokenAddr)
+	if err != nil {
+		log.Fatal("get vault address failed", "tokenID", tokenID, "chainID", chainID, "tokenAddr", tokenAddr, "err", err)
+	}
+	if common.HexToAddress(vaultAddress) != common.HexToAddress(b.ChainConfig.RouterContract) {
+		log.Fatal("vault address mismatch", "inconfig", b.ChainConfig.RouterContract, "intoken", vaultAddress)
+	}
 	b.SetTokenConfig(tokenAddr, tokenCfg)
 	log.Info(fmt.Sprintf(">>> [%5v] init '%v' token config success", chainID, tokenID), "tokenAddr", tokenAddr, "decimals", tokenCfg.Decimals)
 
