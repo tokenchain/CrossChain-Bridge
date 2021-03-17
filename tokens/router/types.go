@@ -97,16 +97,19 @@ func (c *TokenConfig) CheckConfig() error {
 	if c.ContractAddress == "" {
 		return errors.New("token must config 'ContractAddress'")
 	}
-	if c.MaximumSwap < 0 {
-		return errors.New("token must config 'MaximumSwap' (non-negative)")
+	if c.MaximumSwap <= 0 {
+		return errors.New("token must config 'MaximumSwap' (positive)")
 	}
-	if c.MinimumSwap < 0 {
-		return errors.New("token must config 'MinimumSwap' (non-negative)")
+	if c.MinimumSwap <= 0 {
+		return errors.New("token must config 'MinimumSwap' (positive)")
 	}
 	if c.MinimumSwap > c.MaximumSwap {
 		return errors.New("wrong token config, MinimumSwap > MaximumSwap")
 	}
-	if c.SwapFeeRate < 0 || c.SwapFeeRate > 1 {
+	if c.BigValueThreshold <= 0 {
+		return errors.New("token must config 'BigValueThreshold' (positive)")
+	}
+	if c.SwapFeeRate <= 0 || c.SwapFeeRate >= 1 {
 		return errors.New("token must config 'SwapFeeRate' (in range (0,1))")
 	}
 	if c.MaximumSwapFee < 0 {
@@ -123,9 +126,6 @@ func (c *TokenConfig) CheckConfig() error {
 	}
 	if c.SwapFeeRate == 0.0 && c.MinimumSwapFee > 0.0 {
 		return errors.New("wrong token config, MinimumSwapFee should be 0 if SwapFeeRate is 0")
-	}
-	if c.BigValueThreshold == 0 {
-		return errors.New("token must config 'BigValueThreshold' (non-negative)")
 	}
 
 	c.calcAndStoreValue()
