@@ -15,6 +15,7 @@ func (b *Bridge) SendTransaction(signedTx interface{}) (txHash string, err error
 		fmt.Printf("signed tx is %+v\n", signedTx)
 		return "", errors.New("wrong signed transaction type")
 	}
+	// call 'estimateGas' before sending // TODO
 	txHash = tx.Hash().String()
 	err = b.SendSignedTransaction(tx)
 	if err != nil {

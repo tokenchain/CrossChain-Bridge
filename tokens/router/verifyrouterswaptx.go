@@ -244,5 +244,21 @@ func (b *Bridge) chekcAndAmendSwapTradePath(swapInfo *tokens.TxSwapInfo) error {
 	if dstBridge == nil {
 		return tokens.ErrNoBridgeForChainID
 	}
-	return nil // TODO
+	tokenID := swapInfo.TokenID
+	dstChainID := dstBridge.ChainConfig.ChainID
+	peerToken := GetPeerToken(tokenID, dstChainID)
+	if peerToken == "" {
+		return tokens.ErrMissTokenConfig
+	}
+	tokenCfg := dstBridge.GetTokenConfig(peerToken)
+	if tokenCfg == nil {
+		return tokens.ErrMissTokenConfig
+	}
+	path := swapInfo.Path
+	if common.HexToAddress(path[0]) != common.HexToAddress(peerToken) {
+		path = append([]string{peerToken}, path...)
+		swapInfo.Path = path
+	}
+	// check if token pairs exist // TODO
+	return nil
 }

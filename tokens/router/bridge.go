@@ -220,6 +220,16 @@ func printPeerTokens() {
 	log.Info(">>> end print all peer tokens")
 }
 
+// GetPeerToken get peer token address by tokenid and chainid
+func GetPeerToken(tokenID, chainID string) (tokenAddr string) {
+	tokenIDKey := strings.ToLower(tokenID)
+	tokens := PeerTokens[tokenIDKey]
+	if tokens == nil {
+		return ""
+	}
+	return tokens[chainID]
+}
+
 // GetSignerChainID default way to get signer chain id
 // use chain ID first, if missing then use network ID instead.
 // normally this way works, but sometimes it failed (eg. ETC),
