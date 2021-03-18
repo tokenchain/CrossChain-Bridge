@@ -83,24 +83,47 @@ func (b *Bridge) GetTokenSupply(tokenType, tokenAddress string) (*big.Int, error
 	}
 }
 
-// GetRouterMPC get router contract's mpc address
-func (b *Bridge) GetRouterMPC(routerContract string) (string, error) {
+// GetMPCAddress call "mpc()"
+func (b *Bridge) GetMPCAddress(contractAddr string) (string, error) {
 	data := common.FromHex("0xf75c2664")
-	res, err := b.CallContract(routerContract, data, "latest")
+	res, err := b.CallContract(contractAddr, data, "latest")
 	if err != nil {
 		return "", err
 	}
 	return ParseStringInData(common.FromHex(res), 0)
 }
 
-// GetVaultAddress get token's vault (router) address
-func (b *Bridge) GetVaultAddress(tokenAddr string) (string, error) {
+// GetVaultAddress call "vault()"
+func (b *Bridge) GetVaultAddress(contractAddr string) (string, error) {
 	data := common.FromHex("0xfbfa77cf")
-	res, err := b.CallContract(tokenAddr, data, "latest")
+	res, err := b.CallContract(contractAddr, data, "latest")
 	if err != nil {
 		return "", err
 	}
 	return ParseStringInData(common.FromHex(res), 0)
+}
+
+// GetOwnerAddress call "owner()"
+func (b *Bridge) GetOwnerAddress(contractAddr string) (string, error) {
+	data := common.FromHex("0x8da5cb5b")
+	res, err := b.CallContract(contractAddr, data, "latest")
+	if err != nil {
+		return "", err
+	}
+	return ParseStringInData(common.FromHex(res), 0)
+}
+
+// IsMinter call "isMinter(address)"
+func (b *Bridge) IsMinter(contractAddr, minterAddr string) (bool, error) {
+	funcHash := common.FromHex("0xaa271e1a")
+	data := make([]byte, 36)
+	copy(data[:4], funcHash)
+	copy(data[4:36], common.HexToAddress(minterAddr).Hash().Bytes())
+	res, err := b.CallContract(contractAddr, data, "latest")
+	if err != nil {
+		return false, err
+	}
+	return getBoolFlagFromStr(res)
 }
 
 func parseSliceInData(data []byte, pos uint64) (offset, length uint64, err error) {

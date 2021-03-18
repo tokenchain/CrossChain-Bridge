@@ -49,6 +49,7 @@ generate ChainConfig json marshal data
 					cIDFlag,
 					cDecimalsFlag,
 					cContractAddressFlag,
+					cContractVersionFlag,
 					cMaximumSwapFlag,
 					cMinimumSwapFlag,
 					cBigValueThresholdFlag,
@@ -163,6 +164,11 @@ decode hex string
 		Usage: "token config (require)",
 	}
 
+	cContractVersionFlag = &cli.Float64Flag{
+		Name:  "c.ContractVersion",
+		Usage: "token config (require)",
+	}
+
 	cMaximumSwapFlag = &cli.Float64Flag{
 		Name:  "c.MaximumSwap",
 		Usage: "token config (require)",
@@ -234,6 +240,7 @@ func genTokenConfigData(ctx *cli.Context) error {
 		ID:                ctx.String(cIDFlag.Name),
 		Decimals:          uint8(decimals),
 		ContractAddress:   ctx.String(cContractAddressFlag.Name),
+		ContractVersion:   ctx.Float64(cContractVersionFlag.Name),
 		MaximumSwap:       ctx.Float64(cMaximumSwapFlag.Name),
 		MinimumSwap:       ctx.Float64(cMinimumSwapFlag.Name),
 		BigValueThreshold: ctx.Float64(cBigValueThresholdFlag.Name),

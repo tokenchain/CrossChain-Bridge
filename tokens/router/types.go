@@ -35,6 +35,7 @@ type TokenConfig struct {
 	ID                string
 	Decimals          uint8
 	ContractAddress   string
+	ContractVersion   float64
 	MaximumSwap       float64 // whole unit (eg. BTC, ETH, FSN), not Satoshi
 	MinimumSwap       float64 // whole unit
 	BigValueThreshold float64
@@ -90,12 +91,16 @@ func (c *ChainConfig) GetRouterMPCPubkey() string {
 }
 
 // CheckConfig check token config
+// nolint:gocyclo // check all together
 func (c *TokenConfig) CheckConfig() error {
 	if c.ID == "" {
 		return errors.New("token must config 'ID'")
 	}
 	if c.ContractAddress == "" {
 		return errors.New("token must config 'ContractAddress'")
+	}
+	if c.ContractVersion <= 0 {
+		return errors.New("token must config 'ContractVersion' (positive)")
 	}
 	if c.MaximumSwap <= 0 {
 		return errors.New("token must config 'MaximumSwap' (positive)")

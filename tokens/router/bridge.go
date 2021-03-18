@@ -109,7 +109,7 @@ func (b *Bridge) initChainConfig(chainID *big.Int) {
 	if err = chainCfg.CheckConfig(); err != nil {
 		log.Fatal("check chain config failed", "chainID", chainID, "err", err)
 	}
-	routerMPC, err := b.GetRouterMPC(chainCfg.RouterContract)
+	routerMPC, err := b.GetMPCAddress(chainCfg.RouterContract)
 	if err != nil {
 		log.Fatal("get router mpc address failed", "routerContract", chainCfg.RouterContract, "err", err)
 	}
@@ -166,12 +166,8 @@ func (b *Bridge) initTokenConfig(tokenID string, chainID *big.Int) {
 	if err = tokenCfg.CheckConfig(); err != nil {
 		log.Fatal("check token config failed", "tokenID", tokenID, "chainID", chainID, "tokenAddr", tokenAddr, "err", err)
 	}
-	vaultAddress, err := b.GetVaultAddress(tokenAddr)
-	if err != nil {
-		log.Fatal("get vault address failed", "tokenID", tokenID, "chainID", chainID, "tokenAddr", tokenAddr, "err", err)
-	}
-	if common.HexToAddress(vaultAddress) != common.HexToAddress(b.ChainConfig.RouterContract) {
-		log.Fatal("vault address mismatch", "inconfig", b.ChainConfig.RouterContract, "intoken", vaultAddress)
+	if err = b.checkTokenMinter(tokenAddr, tokenCfg.ContractVersion); err != nil {
+		log.Fatal("check token minter failed", "tokenID", tokenID, "chainID", chainID, "tokenAddr", tokenAddr, "err", err)
 	}
 	b.SetTokenConfig(tokenAddr, tokenCfg)
 	log.Info(fmt.Sprintf(">>> [%5v] init '%v' token config success", chainID, tokenID), "tokenAddr", tokenAddr, "decimals", tokenCfg.Decimals)
@@ -183,6 +179,34 @@ func (b *Bridge) initTokenConfig(tokenID string, chainID *big.Int) {
 		PeerTokens[tokenIDKey] = tokensMap
 	}
 	tokensMap[chainID.String()] = tokenAddr
+}
+
+func (b *Bridge) checkTokenMinter(tokenAddr string, tokenVer float64) (err error) {
+	routerContract := b.ChainConfig.RouterContract
+	var minterAddr string
+	var isMinter bool
+	switch {
+	default:
+		isMinter, err = b.IsMinter(tokenAddr, routerContract)
+		if err != nil {
+			return err
+		}
+		if !isMinter {
+			return fmt.Errorf("%v is not minter", routerContract)
+		}
+		return nil
+	case tokenVer == 3:
+		minterAddr, err = b.GetVaultAddress(tokenAddr)
+	case tokenVer < 3:
+		minterAddr, err = b.GetOwnerAddress(tokenAddr)
+	}
+	if err != nil {
+		return err
+	}
+	if common.HexToAddress(minterAddr) != common.HexToAddress(routerContract) {
+		return fmt.Errorf("minter mismatch, have '%v' config '%v'", minterAddr, routerContract)
+	}
+	return nil
 }
 
 func printPeerTokens() {
