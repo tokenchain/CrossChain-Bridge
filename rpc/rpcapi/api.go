@@ -283,12 +283,3 @@ func (s *RPCAPI) GetRegisteredAddress(r *http.Request, address *string, result *
 	}
 	return err
 }
-
-// RegisterRouterSwap api
-func (s *RPCAPI) RegisterRouterSwap(r *http.Request, fromChainID, txid *string, result *swapapi.MapIntResult) error {
-	res, err := swapapi.RegisterRouterSwap(*fromChainID, *txid)
-	if err == nil && res != nil {
-		*result = *res
-	}
-	return err
-}

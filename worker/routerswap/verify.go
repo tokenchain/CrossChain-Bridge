@@ -24,7 +24,7 @@ func StartVerifyJob() {
 			switch err {
 			case nil, tokens.ErrTxNotStable, tokens.ErrTxNotFound:
 			default:
-				logWorkerError("verify", "process router swap verify error", err, "txid", swap.TxID, "logIndex", swap.LogIndex)
+				logWorkerError("verify", "process router swap verify error", err, "chainid", swap.FromChainID, "txid", swap.TxID, "logIndex", swap.LogIndex)
 			}
 		}
 		restInJob(restIntervalInVerifyJob)
@@ -56,48 +56,25 @@ func processRouterSwapVerify(swap *mongodb.MgoSwap) (err error) {
 }
 
 func updateSwapStatus(bridge *router.Bridge, fromChainID, txid string, logIndex int, swapInfo *tokens.TxSwapInfo, err error) error {
-	resultStatus := mongodb.MatchTxEmpty
-
 	switch err {
 	case tokens.ErrTxNotStable, tokens.ErrTxNotFound:
 		return err
 	case nil:
-		status := mongodb.TxNotSwapped
 		if swapInfo.Value.Cmp(bridge.GetBigValueThreshold(swapInfo.Token)) > 0 {
-			status = mongodb.TxWithBigValue
-			resultStatus = mongodb.TxWithBigValue
+			return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxWithBigValue, now(), "")
 		}
-		err = mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, status, now(), "")
-	case tokens.ErrTxWithWrongPath:
-		resultStatus = mongodb.TxWithWrongPath
-		err = mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxWithWrongPath, now(), err.Error())
-	case tokens.ErrTxWithWrongMemo:
-		resultStatus = mongodb.TxWithWrongMemo
-		err = mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxWithWrongMemo, now(), err.Error())
-	case tokens.ErrBindAddrIsContract:
-		resultStatus = mongodb.BindAddrIsContract
-		err = mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.BindAddrIsContract, now(), err.Error())
+		err = mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxNotSwapped, now(), "")
+		if err != nil {
+			return err
+		}
+		return addInitialSwapResult(swapInfo, mongodb.MatchTxEmpty)
 	case tokens.ErrTxWithWrongValue:
-		resultStatus = mongodb.TxWithWrongValue
-		err = mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxWithWrongValue, now(), err.Error())
-	case tokens.ErrTxSenderNotRegistered:
-		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxSenderNotRegistered, now(), err.Error())
-	case tokens.ErrTxWithWrongSender:
-		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxWithWrongSender, now(), err.Error())
-	case tokens.ErrTxIncompatible:
-		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxIncompatible, now(), err.Error())
-	case tokens.ErrTxWithWrongReceipt, tokens.ErrBindAddressMismatch:
-		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxVerifyFailed, now(), err.Error())
-	case tokens.ErrRPCQueryError:
-		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.RPCQueryError, now(), err.Error())
+		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxWithWrongValue, now(), err.Error())
+	case tokens.ErrTxWithWrongPath:
+		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxWithWrongPath, now(), err.Error())
+	case tokens.ErrMissTokenConfig:
+		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.MissTokenConfig, now(), err.Error())
 	default:
-		logWorkerWarn("verify", "maybe not considered tx verify error", "err", err)
 		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxVerifyFailed, now(), err.Error())
 	}
-
-	if err != nil {
-		logWorkerError("verify", "update router swap status", err, "chainid", fromChainID, "txid", txid, "logIndex", swapInfo.LogIndex)
-		return err
-	}
-	return addInitialSwapResult(swapInfo, resultStatus)
 }

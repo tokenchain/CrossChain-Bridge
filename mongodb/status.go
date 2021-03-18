@@ -59,9 +59,20 @@ const (
 	BindAddrIsContract                      // 17
 	RPCQueryError                           // 18
 	TxWithWrongPath                         // 19
+	MissTokenConfig                         // 20
 
 	KeepStatus = 255
 )
+
+// IsRegisteredOk is successfully registered
+func (status SwapStatus) IsRegisteredOk() bool {
+	switch status {
+	case TxNotStable, TxNotSwapped, TxSwapFailed, TxProcessed, ManualMakeFail:
+		return true
+	default:
+		return false
+	}
+}
 
 // CanManualMakePass can manual make pass
 func (status SwapStatus) CanManualMakePass() bool {
@@ -165,6 +176,8 @@ func (status SwapStatus) String() string {
 		return "RPCQueryError"
 	case TxWithWrongPath:
 		return "TxWithWrongPath"
+	case MissTokenConfig:
+		return "MissTokenConfig"
 	default:
 		return fmt.Sprintf("unknown swap status %d", status)
 	}

@@ -18,13 +18,14 @@ type RouterSwapAPI struct{}
 
 // RouterRegisterSwapArgs args
 type RouterRegisterSwapArgs struct {
-	ChainID string `json:"chainid"`
-	TxID    string `json:"txid"`
+	ChainID  string `json:"chainid"`
+	TxID     string `json:"txid"`
+	LogIndex string `json:"logindex"`
 }
 
 // RegisterRouterSwap api
 func (s *RouterSwapAPI) RegisterRouterSwap(r *http.Request, args *RouterRegisterSwapArgs, result *swapapi.MapIntResult) error {
-	res, err := swapapi.RegisterRouterSwap(args.ChainID, args.TxID)
+	res, err := swapapi.RegisterRouterSwap(args.ChainID, args.TxID, args.LogIndex)
 	if err == nil && res != nil {
 		*result = *res
 	}

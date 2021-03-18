@@ -24,7 +24,7 @@ var (
 )
 
 // RegisterRouterSwapTx impl
-func (b *Bridge) RegisterRouterSwapTx(txHash string) ([]*tokens.TxSwapInfo, []error) {
+func (b *Bridge) RegisterRouterSwapTx(txHash string, logIndex int) ([]*tokens.TxSwapInfo, []error) {
 	commonInfo := &tokens.TxSwapInfo{}
 	commonInfo.Hash = txHash // Hash
 
@@ -44,15 +44,25 @@ func (b *Bridge) RegisterRouterSwapTx(txHash string) ([]*tokens.TxSwapInfo, []er
 
 	swapInfos := make([]*tokens.TxSwapInfo, 0)
 	errs := make([]error, 0)
-	for i, rlog := range receipt.Logs {
+	startIndex, endIndex := 0, len(receipt.Logs)
+
+	if logIndex != 0 {
+		if logIndex >= endIndex || logIndex < 0 {
+			return []*tokens.TxSwapInfo{commonInfo}, []error{tokens.ErrLogIndexOutOfRange}
+		}
+		startIndex = logIndex
+		endIndex = logIndex + 1
+	}
+
+	for i := startIndex; i < endIndex; i++ {
 		swapInfo := &tokens.TxSwapInfo{}
 		*swapInfo = *commonInfo
 		swapInfo.LogIndex = i // LogIndex
-		err := b.verifyRouterSwapTxLog(swapInfo, rlog)
+		err := b.verifyRouterSwapTxLog(swapInfo, receipt.Logs[i])
 		if err == nil {
 			err = b.checkRouterSwapInfo(swapInfo)
 		}
-		if tokens.ShouldRegisterSwapForError(err) {
+		if tokens.ShouldRegisterRouterSwapForError(err) {
 			swapInfos = append(swapInfos, swapInfo)
 			errs = append(errs, err)
 		}
@@ -86,7 +96,7 @@ func (b *Bridge) VerifyRouterSwapTx(txHash string, logIndex int, allowUnstable b
 	}
 
 	if logIndex >= len(receipt.Logs) {
-		return swapInfo, tokens.ErrTxWithWrongLogIndex
+		return swapInfo, tokens.ErrLogIndexOutOfRange
 	}
 
 	err = b.verifyRouterSwapTxLog(swapInfo, receipt.Logs[logIndex])

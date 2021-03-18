@@ -249,7 +249,15 @@ func RegisterRouterSwapHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	chainID := vars["chainid"]
 	txid := vars["txid"]
-	res, err := swapapi.RegisterRouterSwap(chainID, txid)
+
+	vals := r.URL.Query()
+	logIndex := "0"
+	logIndexVals, exist := vals["logindex"]
+	if exist {
+		logIndex = logIndexVals[0]
+	}
+
+	res, err := swapapi.RegisterRouterSwap(chainID, txid, logIndex)
 	writeResponse(w, res, err)
 }
 

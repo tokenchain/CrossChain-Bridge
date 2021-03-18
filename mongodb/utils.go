@@ -17,8 +17,6 @@ func GetStatusByTokenVerifyError(err error) SwapStatus {
 		tokens.ErrTxWithWrongValue,
 		tokens.ErrBindAddrIsContract:
 		return TxNotStable
-	case tokens.ErrTxWithWrongPath:
-		return TxWithWrongPath
 	case tokens.ErrTxSenderNotRegistered:
 		return TxSenderNotRegistered
 	case tokens.ErrTxWithWrongSender:
@@ -30,5 +28,24 @@ func GetStatusByTokenVerifyError(err error) SwapStatus {
 	default:
 		log.Warn("[mongodb] maybe not considered tx verify error", "err", err)
 		return TxNotStable
+	}
+}
+
+// GetRouterSwapStatusByVerifyError get router swap status by verify error
+func GetRouterSwapStatusByVerifyError(err error) SwapStatus {
+	if !tokens.ShouldRegisterRouterSwapForError(err) {
+		return TxVerifyFailed
+	}
+	switch err {
+	case nil:
+		return TxNotStable
+	case tokens.ErrTxWithWrongValue:
+		return TxWithWrongValue
+	case tokens.ErrTxWithWrongPath:
+		return TxWithWrongPath
+	case tokens.ErrMissTokenConfig:
+		return MissTokenConfig
+	default:
+		return TxVerifyFailed
 	}
 }

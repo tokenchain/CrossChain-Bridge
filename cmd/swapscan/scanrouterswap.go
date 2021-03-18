@@ -298,7 +298,7 @@ func (scanner *routerSwapScanner) postSwap(chainID, txid string, logIndex int) {
 	}
 	for i := 0; i < scanner.rpcRetryCount; i++ {
 		err := client.RPCPost(&result, scanner.swapServer, rpcMethod, args)
-		if tokens.ShouldRegisterSwapForError(err) {
+		if tokens.ShouldRegisterRouterSwapForError(err) {
 			break
 		}
 		if tools.IsSwapAlreadyExistRegisterError(err) {
