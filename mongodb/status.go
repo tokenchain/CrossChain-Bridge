@@ -61,7 +61,8 @@ const (
 	TxWithWrongPath                         // 19
 	MissTokenConfig                         // 20
 
-	KeepStatus = 255
+	EstimateGasFailed = 127
+	KeepStatus        = 255
 )
 
 // IsRegisteredOk is successfully registered
@@ -178,6 +179,8 @@ func (status SwapStatus) String() string {
 		return "TxWithWrongPath"
 	case MissTokenConfig:
 		return "MissTokenConfig"
+	case EstimateGasFailed:
+		return "EstimateGasFailed"
 	default:
 		return fmt.Sprintf("unknown swap status %d", status)
 	}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/anyswap/CrossChain-Bridge/common"
+	"github.com/anyswap/CrossChain-Bridge/common/hexutil"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
@@ -68,9 +69,17 @@ func (b *Bridge) buildTx(args *tokens.BuildTxArgs, extra *tokens.EthExtraArgs) (
 		return nil, err
 	}
 
+	_, err = b.EstimateGas(args.From, args.To, value, input, "latest")
+	if err != nil {
+		log.Error("build routerswap tx estimate gas failed",
+			"swapID", args.SwapID, "from", args.From, "to", args.To,
+			"value", value, "data", hexutil.Bytes(input), "err", err)
+		return nil, tokens.ErrEstimateGasFailed
+	}
+
 	rawTx = types.NewTransaction(nonce, to, value, gasLimit, gasPrice, input)
 
-	log.Trace("build routerswap raw tx", "swapID", args.SwapID, "swapType", args.SwapType,
+	log.Trace("build routerswap raw tx", "swapID", args.SwapID,
 		"from", args.From, "to", to.String(), "bind", args.Bind, "nonce", nonce,
 		"value", value, "originValue", args.OriginValue, "gasLimit", gasLimit, "gasPrice", gasPrice)
 

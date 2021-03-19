@@ -251,6 +251,9 @@ func doSwap(args *tokens.BuildTxArgs) (err error) {
 	rawTx, err := resBridge.BuildRawTransaction(args)
 	if err != nil {
 		logWorkerError("doSwap", "build tx failed", err, "chainID", chainID, "txid", txid, "logIndex", logIndex)
+		if err == tokens.ErrEstimateGasFailed {
+			_ = mongodb.UpdateRouterSwapStatus(chainID, txid, logIndex, mongodb.EstimateGasFailed, now(), err.Error())
+		}
 		return err
 	}
 

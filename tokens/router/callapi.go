@@ -290,3 +290,24 @@ func (b *Bridge) GetBalance(account string) (*big.Int, error) {
 	}
 	return nil, err
 }
+
+// EstimateGas call eth_estimateGas
+func (b *Bridge) EstimateGas(from, to string, value *big.Int, data []byte, blockNumber string) (uint64, error) {
+	reqArgs := map[string]interface{}{
+		"from":  from,
+		"to":    to,
+		"value": (*hexutil.Big)(value),
+		"data":  hexutil.Bytes(data),
+	}
+	gateway := b.GatewayConfig
+	var result hexutil.Uint64
+	var err error
+	for _, apiAddress := range gateway.APIAddress {
+		url := apiAddress
+		err = client.RPCPost(&result, url, "eth_estimateGas", reqArgs, blockNumber)
+		if err == nil {
+			return uint64(result), nil
+		}
+	}
+	return 0, err
+}
