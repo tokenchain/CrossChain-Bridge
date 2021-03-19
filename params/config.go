@@ -21,17 +21,18 @@ var (
 
 // ServerConfig config items (decode from toml file)
 type ServerConfig struct {
-	Identifier  string
-	MongoDB     *MongoDBConfig   `toml:",omitempty" json:",omitempty"`
-	APIServer   *APIServerConfig `toml:",omitempty" json:",omitempty"`
-	SrcChain    *tokens.ChainConfig
-	SrcGateway  *tokens.GatewayConfig
-	DestChain   *tokens.ChainConfig
-	DestGateway *tokens.GatewayConfig
-	Dcrm        *DcrmConfig            `toml:",omitempty" json:",omitempty"`
-	Oracle      *OracleConfig          `toml:",omitempty" json:",omitempty"`
-	BtcExtra    *tokens.BtcExtraConfig `toml:",omitempty" json:",omitempty"`
-	Admins      []string               `toml:",omitempty" json:",omitempty"`
+	Identifier          string
+	MustRegisterAccount bool             `toml:",omitempty" json:",omitempty"`
+	MongoDB             *MongoDBConfig   `toml:",omitempty" json:",omitempty"`
+	APIServer           *APIServerConfig `toml:",omitempty" json:",omitempty"`
+	SrcChain            *tokens.ChainConfig
+	SrcGateway          *tokens.GatewayConfig
+	DestChain           *tokens.ChainConfig
+	DestGateway         *tokens.GatewayConfig
+	Dcrm                *DcrmConfig            `toml:",omitempty" json:",omitempty"`
+	Oracle              *OracleConfig          `toml:",omitempty" json:",omitempty"`
+	BtcExtra            *tokens.BtcExtraConfig `toml:",omitempty" json:",omitempty"`
+	Admins              []string               `toml:",omitempty" json:",omitempty"`
 }
 
 // DcrmConfig dcrm related config
@@ -76,6 +77,11 @@ type MongoDBConfig struct {
 // GetIdentifier get identifier (to distiguish in dcrm accept)
 func GetIdentifier() string {
 	return GetConfig().Identifier
+}
+
+// MustRegisterAccount flag
+func MustRegisterAccount() bool {
+	return GetConfig().MustRegisterAccount
 }
 
 // IsDcrmEnabled is dcrm enabled (for dcrm sign)
