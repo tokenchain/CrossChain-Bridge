@@ -109,6 +109,10 @@ func (b *Bridge) initChainConfig(chainID *big.Int) {
 	if err = chainCfg.CheckConfig(); err != nil {
 		log.Fatal("check chain config failed", "chainID", chainID, "err", err)
 	}
+	routerFactory, err := b.GetFactoryAddress(chainCfg.RouterContract)
+	if err != nil {
+		log.Fatal("get router factory address failed", "routerContract", chainCfg.RouterContract, "err", err)
+	}
 	routerMPC, err := b.GetMPCAddress(chainCfg.RouterContract)
 	if err != nil {
 		log.Fatal("get router mpc address failed", "routerContract", chainCfg.RouterContract, "err", err)
@@ -120,6 +124,7 @@ func (b *Bridge) initChainConfig(chainID *big.Int) {
 	if err = VerifyMPCPubKey(routerMPC, routerMPCPubkey); err != nil {
 		log.Fatal("verify mpc public key failed", "mpc", routerMPC, "mpcPubkey", routerMPCPubkey, "err", err)
 	}
+	chainCfg.routerFactory = routerFactory
 	chainCfg.routerMPC = routerMPC
 	chainCfg.routerMPCPubkey = routerMPCPubkey
 	b.SetChainConfig(chainCfg)

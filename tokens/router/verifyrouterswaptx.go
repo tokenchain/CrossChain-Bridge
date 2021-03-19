@@ -259,6 +259,18 @@ func (b *Bridge) chekcAndAmendSwapTradePath(swapInfo *tokens.TxSwapInfo) error {
 		path = append([]string{peerToken}, path...)
 		swapInfo.Path = path
 	}
-	// check if token pairs exist // TODO
+	if len(path) < 2 {
+		return tokens.ErrTxWithWrongPath
+	}
+	factory := b.ChainConfig.GetRouterFactory()
+	if factory == "" {
+		return tokens.ErrTxWithWrongPath
+	}
+	for i := 1; i < len(path); i++ {
+		pairs, err := b.GetPairFor(factory, path[i-1], path[i])
+		if err != nil || pairs == "" {
+			return tokens.ErrTxWithWrongPath
+		}
+	}
 	return nil
 }

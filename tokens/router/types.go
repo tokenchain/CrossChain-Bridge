@@ -28,6 +28,7 @@ type ChainConfig struct {
 	// cached value
 	routerMPC       string
 	routerMPCPubkey string
+	routerFactory   string
 }
 
 // TokenConfig struct
@@ -88,6 +89,11 @@ func (c *ChainConfig) GetRouterMPC() string {
 // GetRouterMPCPubkey get router mpc public key
 func (c *ChainConfig) GetRouterMPCPubkey() string {
 	return c.routerMPCPubkey
+}
+
+// GetRouterFactory get factory address of router contract
+func (c *ChainConfig) GetRouterFactory() string {
+	return c.routerFactory
 }
 
 // CheckConfig check token config

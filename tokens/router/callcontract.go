@@ -83,6 +83,16 @@ func (b *Bridge) GetTokenSupply(tokenType, tokenAddress string) (*big.Int, error
 	}
 }
 
+// GetFactoryAddress call "factory()"
+func (b *Bridge) GetFactoryAddress(contractAddr string) (string, error) {
+	data := common.FromHex("0xc45a0155")
+	res, err := b.CallContract(contractAddr, data, "latest")
+	if err != nil {
+		return "", err
+	}
+	return ParseStringInData(common.FromHex(res), 0)
+}
+
 // GetMPCAddress call "mpc()"
 func (b *Bridge) GetMPCAddress(contractAddr string) (string, error) {
 	data := common.FromHex("0xf75c2664")
