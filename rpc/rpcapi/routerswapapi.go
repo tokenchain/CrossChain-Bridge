@@ -16,15 +16,15 @@ import (
 // RouterSwapAPI rpc api handler
 type RouterSwapAPI struct{}
 
-// RouterRegisterSwapArgs args
-type RouterRegisterSwapArgs struct {
+// RouterSwapKeyArgs args
+type RouterSwapKeyArgs struct {
 	ChainID  string `json:"chainid"`
 	TxID     string `json:"txid"`
 	LogIndex string `json:"logindex"`
 }
 
 // RegisterRouterSwap api
-func (s *RouterSwapAPI) RegisterRouterSwap(r *http.Request, args *RouterRegisterSwapArgs, result *swapapi.MapIntResult) error {
+func (s *RouterSwapAPI) RegisterRouterSwap(r *http.Request, args *RouterSwapKeyArgs, result *swapapi.MapIntResult) error {
 	res, err := swapapi.RegisterRouterSwap(args.ChainID, args.TxID, args.LogIndex)
 	if err == nil && res != nil {
 		*result = *res
@@ -32,15 +32,8 @@ func (s *RouterSwapAPI) RegisterRouterSwap(r *http.Request, args *RouterRegister
 	return err
 }
 
-// RouterGetSwapArgs args
-type RouterGetSwapArgs struct {
-	ChainID  string `json:"chainid"`
-	TxID     string `json:"txid"`
-	LogIndex string `json:"logindex"`
-}
-
 // GetRouterSwap api
-func (s *RouterSwapAPI) GetRouterSwap(r *http.Request, args *RouterGetSwapArgs, result *swapapi.SwapInfo) error {
+func (s *RouterSwapAPI) GetRouterSwap(r *http.Request, args *RouterSwapKeyArgs, result *swapapi.SwapInfo) error {
 	res, err := swapapi.GetRouterSwap(args.ChainID, args.TxID, args.LogIndex)
 	if err == nil && res != nil {
 		*result = *res

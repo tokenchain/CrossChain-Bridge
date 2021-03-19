@@ -244,30 +244,31 @@ func GetRegisteredAddress(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, res, err)
 }
 
-// RegisterRouterSwapHandler handler
-func RegisterRouterSwapHandler(w http.ResponseWriter, r *http.Request) {
+func getRouterSwapKeys(r *http.Request) (chainID, txid, logIndex string) {
 	vars := mux.Vars(r)
-	chainID := vars["chainid"]
-	txid := vars["txid"]
+	chainID = vars["chainid"]
+	txid = vars["txid"]
 
 	vals := r.URL.Query()
-	logIndex := "0"
+	logIndex = "0"
 	logIndexVals, exist := vals["logindex"]
 	if exist {
 		logIndex = logIndexVals[0]
 	}
+	return chainID, txid, logIndex
+}
 
+// RegisterRouterSwapHandler handler
+func RegisterRouterSwapHandler(w http.ResponseWriter, r *http.Request) {
+	chainID, txid, logIndex := getRouterSwapKeys(r)
 	res, err := swapapi.RegisterRouterSwap(chainID, txid, logIndex)
 	writeResponse(w, res, err)
 }
 
 // GetRouterSwapHandler handler
 func GetRouterSwapHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	chainID := vars["chainid"]
-	txid := vars["txid"]
-	logindex := vars["logindex"]
-	res, err := swapapi.GetRouterSwap(chainID, txid, logindex)
+	chainID, txid, logIndex := getRouterSwapKeys(r)
+	res, err := swapapi.GetRouterSwap(chainID, txid, logIndex)
 	writeResponse(w, res, err)
 }
 

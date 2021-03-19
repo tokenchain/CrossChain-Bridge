@@ -64,7 +64,7 @@ func initRouterSwapRouter(r *mux.Router) {
 	r.Handle("/rpc", rpcserver)
 
 	registerHandleFunc(r, "/swap/register/{chainid}/{txid}", restapi.RegisterRouterSwapHandler, "POST")
-	registerHandleFunc(r, "/swap/status/{chainid}/{txid}/{logindex}", restapi.GetRouterSwapHandler, "GET")
+	registerHandleFunc(r, "/swap/status/{chainid}/{txid}/", restapi.GetRouterSwapHandler, "GET")
 	registerHandleFunc(r, "/swap/history/{chainid}/{address}", restapi.GetRouterSwapHistoryHandler, "GET")
 }
 
