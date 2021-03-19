@@ -23,21 +23,21 @@ import (
 )
 
 var (
-	routerAddressFlag = &cli.StringFlag{
-		Name:  "routerAddress",
-		Usage: "router address",
+	routerContractFlag = &cli.StringFlag{
+		Name:  "routerContract",
+		Usage: "router contract address",
 	}
 
-	scanRouterSwapCommand = &cli.Command{
-		Action:    scanRouterSwap,
-		Name:      "scanRouterSwap",
-		Usage:     "scan router swap on eth like chain",
+	scanswapCommand = &cli.Command{
+		Action:    scanswap,
+		Name:      "scanswap",
+		Usage:     "scan router swap and post register",
 		ArgsUsage: " ",
 		Description: `
-scan router swap on eth like chain
+scan router swap and post register to swap server
 `,
 		Flags: []cli.Flag{
-			routerAddressFlag,
+			routerContractFlag,
 			utils.GatewayFlag,
 			utils.SwapServerFlag,
 			utils.StartHeightFlag,
@@ -55,14 +55,14 @@ scan router swap on eth like chain
 )
 
 type routerSwapScanner struct {
-	chainID       string
-	routerAddress string
-	gateway       string
-	swapServer    string
-	startHeight   uint64
-	endHeight     uint64
-	stableHeight  uint64
-	jobCount      uint64
+	chainID        string
+	routerContract string
+	gateway        string
+	swapServer     string
+	startHeight    uint64
+	endHeight      uint64
+	stableHeight   uint64
+	jobCount       uint64
 
 	client *ethclient.Client
 	ctx    context.Context
@@ -71,14 +71,14 @@ type routerSwapScanner struct {
 	rpcRetryCount int
 }
 
-func scanRouterSwap(ctx *cli.Context) error {
+func scanswap(ctx *cli.Context) error {
 	utils.SetLogger(ctx)
 	scanner := &routerSwapScanner{
 		ctx:           context.Background(),
 		rpcInterval:   3 * time.Second,
 		rpcRetryCount: 3,
 	}
-	scanner.routerAddress = ctx.String(routerAddressFlag.Name)
+	scanner.routerContract = ctx.String(routerContractFlag.Name)
 	scanner.gateway = ctx.String(utils.GatewayFlag.Name)
 	scanner.swapServer = ctx.String(utils.SwapServerFlag.Name)
 	scanner.startHeight = ctx.Uint64(utils.StartHeightFlag.Name)
@@ -87,7 +87,7 @@ func scanRouterSwap(ctx *cli.Context) error {
 	scanner.jobCount = ctx.Uint64(utils.JobsFlag.Name)
 
 	log.Info("get argument success",
-		"routerAddress", scanner.routerAddress,
+		"routerContract", scanner.routerContract,
 		"gateway", scanner.gateway,
 		"swapServer", scanner.swapServer,
 		"start", scanner.startHeight,
@@ -103,8 +103,8 @@ func scanRouterSwap(ctx *cli.Context) error {
 }
 
 func (scanner *routerSwapScanner) verifyOptions() {
-	if !common.IsHexAddress(scanner.routerAddress) {
-		log.Fatalf("invalid router address '%v'", scanner.routerAddress)
+	if !common.IsHexAddress(scanner.routerContract) {
+		log.Fatalf("invalid router address '%v'", scanner.routerContract)
 	}
 	if scanner.gateway == "" {
 		log.Fatal("must specify gateway address")
@@ -166,7 +166,6 @@ func (scanner *routerSwapScanner) run() {
 	}
 }
 
-// nolint:dupl // in diff sub command
 func (scanner *routerSwapScanner) doScanRangeJob(start, end uint64) {
 	if start >= end {
 		return
@@ -259,7 +258,7 @@ func (scanner *routerSwapScanner) scanBlock(job, height uint64, cache bool) {
 }
 
 func (scanner *routerSwapScanner) scanTransaction(tx *types.Transaction) {
-	if tx.To() == nil || !strings.EqualFold(tx.To().String(), scanner.routerAddress) {
+	if tx.To() == nil || !strings.EqualFold(tx.To().String(), scanner.routerContract) {
 		return
 	}
 
@@ -306,4 +305,24 @@ func (scanner *routerSwapScanner) postSwap(chainID, txid string, logIndex int) {
 		}
 		log.Warn(subject+" failed", "chainid", chainID, "txid", txid, "logindex", logIndex, "err", err)
 	}
+}
+
+type cachedSacnnedBlocks struct {
+	capacity  int
+	nextIndex int
+	hashes    []string
+}
+
+func (cache *cachedSacnnedBlocks) addBlock(blockHash string) {
+	cache.hashes[cache.nextIndex] = blockHash
+	cache.nextIndex = (cache.nextIndex + 1) % cache.capacity
+}
+
+func (cache *cachedSacnnedBlocks) isScanned(blockHash string) bool {
+	for _, b := range cache.hashes {
+		if b == blockHash {
+			return true
+		}
+	}
+	return false
 }

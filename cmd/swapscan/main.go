@@ -25,7 +25,6 @@ func initApp() {
 	app.Commands = []*cli.Command{
 		scanEthCommand,
 		scanBtcCommand,
-		scanRouterSwapCommand,
 		utils.LicenseCommand,
 		utils.VersionCommand,
 	}
