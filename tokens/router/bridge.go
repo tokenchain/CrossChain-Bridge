@@ -43,6 +43,8 @@ func GetBridgeByChainID(chainID string) *Bridge {
 func InitRouterBridges(isServer bool) {
 	log.Info("start init router bridges")
 
+	InitRouterConfigClients()
+
 	chainIDs, err := GetAllChainIDs()
 	if err != nil {
 		log.Fatal("call GetAllChainIDs failed", "err", err)

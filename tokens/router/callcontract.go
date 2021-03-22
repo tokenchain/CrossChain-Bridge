@@ -90,7 +90,7 @@ func (b *Bridge) GetFactoryAddress(contractAddr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return ParseStringInData(common.FromHex(res), 0)
+	return common.BytesToAddress(common.GetData(common.FromHex(res), 0, 32)).String(), nil
 }
 
 // GetMPCAddress call "mpc()"
@@ -100,7 +100,7 @@ func (b *Bridge) GetMPCAddress(contractAddr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return ParseStringInData(common.FromHex(res), 0)
+	return common.BytesToAddress(common.GetData(common.FromHex(res), 0, 32)).String(), nil
 }
 
 // GetVaultAddress call "vault()"
@@ -110,7 +110,7 @@ func (b *Bridge) GetVaultAddress(contractAddr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return ParseStringInData(common.FromHex(res), 0)
+	return common.BytesToAddress(common.GetData(common.FromHex(res), 0, 32)).String(), nil
 }
 
 // GetOwnerAddress call "owner()"
@@ -120,7 +120,7 @@ func (b *Bridge) GetOwnerAddress(contractAddr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return ParseStringInData(common.FromHex(res), 0)
+	return common.BytesToAddress(common.GetData(common.FromHex(res), 0, 32)).String(), nil
 }
 
 // IsMinter call "isMinter(address)"
@@ -133,7 +133,7 @@ func (b *Bridge) IsMinter(contractAddr, minterAddr string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return getBoolFlagFromStr(res)
+	return common.GetBigInt(common.FromHex(res), 0, 32).Sign() != 0, nil
 }
 
 func parseSliceInData(data []byte, pos uint64) (offset, length uint64, err error) {

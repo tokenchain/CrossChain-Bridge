@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"encoding/json"
 	"math/big"
 
@@ -8,24 +9,74 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/common/hexutil"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/params"
-	"github.com/anyswap/CrossChain-Bridge/rpc/client"
+	ethereum "github.com/fsn-dev/fsn-go-sdk/efsn"
+	ethcommon "github.com/fsn-dev/fsn-go-sdk/efsn/common"
+	ethtypes "github.com/fsn-dev/fsn-go-sdk/efsn/core/types"
+	"github.com/fsn-dev/fsn-go-sdk/efsn/ethclient"
 )
 
-// CallOnchainContract call onchain contract
-func CallOnchainContract(data hexutil.Bytes, blockNumber string) (result string, err error) {
+var (
+	routerConfigContract ethcommon.Address
+	routerConfigClients  []*ethclient.Client
+	routerConfigCtx      = context.Background()
+
+	channels      = make([]chan<- ethtypes.Log, 0, 3)
+	subscribes    = make([]ethereum.Subscription, 0, 3)
+	updateIDTopic = ethcommon.HexToHash("0x42772a2484b817bd374b06cf7d3ce1e7529d80f9030536688daeb8754e95925f")
+)
+
+// InitRouterConfigClients init router config clients
+func InitRouterConfigClients() {
+	var err error
 	onchainCfg := params.GetRouterConfig().Onchain
-	reqArgs := map[string]interface{}{
-		"to":   onchainCfg.Contract,
-		"data": data,
+	routerConfigContract = ethcommon.HexToAddress(onchainCfg.Contract)
+	routerConfigClients = make([]*ethclient.Client, len(onchainCfg.APIAddress))
+	for i, gateway := range onchainCfg.APIAddress {
+		routerConfigClients[i], err = ethclient.Dial(gateway)
+		if err != nil {
+			log.Fatal("init router config clients failed", "gateway", gateway, "err", err)
+		}
 	}
-	for _, gateway := range onchainCfg.APIAddress {
-		err = client.RPCPost(&result, gateway, "eth_call", reqArgs, blockNumber)
+}
+
+// CallOnchainContract call onchain contract
+func CallOnchainContract(data hexutil.Bytes, blockNumber string) (result []byte, err error) {
+	msg := ethereum.CallMsg{
+		To:   &routerConfigContract,
+		Data: data,
+	}
+	for _, cli := range routerConfigClients {
+		result, err = cli.CallContract(routerConfigCtx, msg, nil)
 		if err == nil {
 			return result, nil
 		}
 	}
-	log.Debug("call onchain contract error", "contract", onchainCfg.Contract, "data", data, "err", err)
-	return "", err
+	log.Debug("call onchain contract error", "contract", routerConfigContract.String(), "data", data, "err", err)
+	return nil, err
+}
+
+// SubscribeUpdateID subscribe update ID and reload configs
+func SubscribeUpdateID() {
+	SubscribeRouterConfig([]ethcommon.Hash{updateIDTopic})
+}
+
+// SubscribeRouterConfig subscribe router config
+func SubscribeRouterConfig(topics []ethcommon.Hash) {
+	fq := ethereum.FilterQuery{
+		Addresses: []ethcommon.Address{routerConfigContract},
+		Topics:    [][]ethcommon.Hash{topics},
+	}
+	for i, cli := range routerConfigClients {
+		var ch chan<- ethtypes.Log
+		sub, err := cli.SubscribeFilterLogs(routerConfigCtx, fq, ch)
+		if err != nil {
+			log.Error("subscribe updateID failed", "index", i, "err", err)
+			continue
+		}
+		channels = append(channels, ch)
+		subscribes = append(subscribes, sub)
+	}
+	log.Info("subscribe updateID finished", "subscribes", len(subscribes))
 }
 
 // --------------------- getter -----------------------------------
@@ -40,7 +91,7 @@ func GetChainConfig(chainID *big.Int) (chainCfg *ChainConfig, err error) {
 	if err != nil {
 		return nil, err
 	}
-	hexData, err := ParseBytesInData(common.FromHex(res), 0)
+	hexData, err := ParseBytesInData(res, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +114,7 @@ func getTokenConfig(funcHash []byte, chainID *big.Int, token string) (tokenCfg *
 	if err != nil {
 		return nil, err
 	}
-	hexData, err := ParseBytesInData(common.FromHex(res), 0)
+	hexData, err := ParseBytesInData(res, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +155,7 @@ func GetCustomConfig(chainID *big.Int, key string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return ParseStringInData(common.FromHex(res), 0)
+	return ParseStringInData(res, 0)
 }
 
 // GetTokenIDOfToken abi
@@ -118,7 +169,7 @@ func GetTokenIDOfToken(chainID *big.Int, token string) (tokenID string, err erro
 	if err != nil {
 		return "", err
 	}
-	return ParseStringInData(common.FromHex(res), 0)
+	return ParseStringInData(res, 0)
 }
 
 // GetMPCPubkey abi
@@ -131,7 +182,7 @@ func GetMPCPubkey(mpcAddress string) (pubkey string, err error) {
 	if err != nil {
 		return "", err
 	}
-	return ParseStringInData(common.FromHex(res), 0)
+	return ParseStringInData(res, 0)
 }
 
 func getOneStrArgData(funcHash []byte, strArg string) []byte {
@@ -153,15 +204,7 @@ func GetMPCPubkey2(mpcAddress string) (pubkey string, err error) {
 	if err != nil {
 		return "", err
 	}
-	return ParseStringInData(common.FromHex(res), 0)
-}
-
-func getBoolFlagFromStr(str string) (flag bool, err error) {
-	bi, err := common.GetBigIntFromStr(str)
-	if err != nil {
-		return false, err
-	}
-	return bi.Sign() != 0, nil
+	return ParseStringInData(res, 0)
 }
 
 // IsChainIDExist abi
@@ -174,7 +217,7 @@ func IsChainIDExist(chainID *big.Int) (exist bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	return getBoolFlagFromStr(res)
+	return common.GetBigInt(res, 0, 32).Sign() != 0, nil
 }
 
 // IsTokenIDExist abi
@@ -185,7 +228,7 @@ func IsTokenIDExist(tokenID string) (exist bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	return getBoolFlagFromStr(res)
+	return common.GetBigInt(res, 0, 32).Sign() != 0, nil
 }
 
 // GetChainIDCount abi
@@ -195,7 +238,7 @@ func GetChainIDCount() (count uint64, err error) {
 	if err != nil {
 		return 0, err
 	}
-	return common.GetUint64FromStr(res)
+	return common.GetBigInt(res, 0, 32).Uint64(), nil
 }
 
 // GetAllChainIDs abi
@@ -205,7 +248,7 @@ func GetAllChainIDs() (chainIDs []*big.Int, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return ParseNumberSliceAsBigIntsInData(common.FromHex(res), 0)
+	return ParseNumberSliceAsBigIntsInData(res, 0)
 }
 
 // GetChainIDAtIndex abi
@@ -218,7 +261,7 @@ func GetChainIDAtIndex(index uint64) (chainID *big.Int, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return common.GetBigIntFromStr(res)
+	return common.GetBigInt(res, 0, 32), nil
 }
 
 // GetChainIDsInRange abi
@@ -232,7 +275,7 @@ func GetChainIDsInRange(start, end uint64) (chainIDs []*big.Int, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return ParseNumberSliceAsBigIntsInData(common.FromHex(res), 0)
+	return ParseNumberSliceAsBigIntsInData(res, 0)
 }
 
 // GetTokenIDCount abi
@@ -242,7 +285,7 @@ func GetTokenIDCount() (count uint64, err error) {
 	if err != nil {
 		return 0, err
 	}
-	return common.GetUint64FromStr(res)
+	return common.GetBigInt(res, 0, 32).Uint64(), nil
 }
 
 // GetAllTokenIDs abi
@@ -252,7 +295,7 @@ func GetAllTokenIDs() (tokenIDs []string, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return ParseStringSliceInData(common.FromHex(res), 0)
+	return ParseStringSliceInData(res, 0)
 }
 
 // GetTokenIDAtIndex abi
@@ -265,7 +308,7 @@ func GetTokenIDAtIndex(index uint64) (tokenID string, err error) {
 	if err != nil {
 		return "", err
 	}
-	return ParseStringInData(common.FromHex(res), 0)
+	return ParseStringInData(res, 0)
 }
 
 // GetTokenIDsInRange abi
@@ -279,7 +322,7 @@ func GetTokenIDsInRange(start, end uint64) (tokenIDs []string, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return ParseStringSliceInData(common.FromHex(res), 0)
+	return ParseStringSliceInData(res, 0)
 }
 
 // GetMultichainTokenOnChain abi
@@ -297,7 +340,7 @@ func GetMultichainTokenOnChain(tokenID string, chainID *big.Int) (tokenAddr stri
 	if err != nil {
 		return "", err
 	}
-	return common.HexToAddress(res).String(), nil
+	return common.BigToAddress(common.GetBigInt(res, 0, 32)).String(), nil
 }
 
 // GetMultichainTokenCount abi
@@ -308,11 +351,7 @@ func GetMultichainTokenCount(tokenID string) (count uint64, err error) {
 	if err != nil {
 		return 0, err
 	}
-	bi, err := common.GetBigIntFromStr(res)
-	if err != nil {
-		return 0, err
-	}
-	return bi.Uint64(), nil
+	return common.GetBigInt(res, 0, 32).Uint64(), nil
 }
 
 // GetMultichainTokensInRange abi
@@ -331,11 +370,11 @@ func GetMultichainTokensInRange(tokenID string, start, end uint64) (chainIDs []*
 	if err != nil {
 		return nil, nil, err
 	}
-	chainIDs, err = ParseNumberSliceAsBigIntsInData(common.FromHex(res), 0)
+	chainIDs, err = ParseNumberSliceAsBigIntsInData(res, 0)
 	if err != nil {
 		return nil, nil, err
 	}
-	tokens, err = ParseAddressSliceInData(common.FromHex(res), 32)
+	tokens, err = ParseAddressSliceInData(res, 32)
 	if err != nil {
 		return nil, nil, err
 	}
