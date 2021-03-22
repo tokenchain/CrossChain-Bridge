@@ -15,8 +15,8 @@ import (
 
 // router bridges
 var (
-	RouterBridges = make(map[string]*Bridge)           // key is chainID
-	PeerTokens    = make(map[string]map[string]string) // key is tokenID,chainID
+	RouterBridges    = make(map[string]*Bridge)           // key is chainID
+	MultichainTokens = make(map[string]map[string]string) // key is tokenID,chainID
 )
 
 // Bridge eth bridge
@@ -67,7 +67,7 @@ func InitRouterBridges(isServer bool) {
 
 		RouterBridges[chainID.String()] = bridge
 	}
-	printPeerTokens()
+	printMultichainTokens()
 
 	cfg := params.GetRouterConfig()
 	dcrm.Init(cfg.Dcrm, isServer)
@@ -146,7 +146,7 @@ func (b *Bridge) initTokenConfig(tokenID string, chainID *big.Int) {
 	if tokenID == "" {
 		log.Fatal("empty token ID")
 	}
-	tokenAddr, err := GetPeerTokenOnChain(tokenID, chainID)
+	tokenAddr, err := GetMultichainTokenOnChain(tokenID, chainID)
 	if err != nil {
 		log.Fatal("get token address failed", "tokenID", tokenID, "chainID", chainID, "err", err)
 	}
@@ -163,7 +163,7 @@ func (b *Bridge) initTokenConfig(tokenID string, chainID *big.Int) {
 		return
 	}
 	if common.HexToAddress(tokenAddr) != common.HexToAddress(tokenCfg.ContractAddress) {
-		log.Fatal("verify token address mismach", "tokenID", tokenID, "chainID", chainID, "inconfig", tokenCfg.ContractAddress, "inpeer", tokenAddr)
+		log.Fatal("verify token address mismach", "tokenID", tokenID, "chainID", chainID, "inconfig", tokenCfg.ContractAddress, "inmultichain", tokenAddr)
 	}
 	if tokenID != tokenCfg.ID {
 		log.Fatal("verify token ID mismatch", "chainID", chainID, "inconfig", tokenCfg.ID, "intokenids", tokenID)
@@ -178,10 +178,10 @@ func (b *Bridge) initTokenConfig(tokenID string, chainID *big.Int) {
 	log.Info(fmt.Sprintf(">>> [%5v] init '%v' token config success", chainID, tokenID), "tokenAddr", tokenAddr, "decimals", tokenCfg.Decimals)
 
 	tokenIDKey := strings.ToLower(tokenID)
-	tokensMap := PeerTokens[tokenIDKey]
+	tokensMap := MultichainTokens[tokenIDKey]
 	if tokensMap == nil {
 		tokensMap = make(map[string]string)
-		PeerTokens[tokenIDKey] = tokensMap
+		MultichainTokens[tokenIDKey] = tokensMap
 	}
 	tokensMap[chainID.String()] = tokenAddr
 }
@@ -214,21 +214,21 @@ func (b *Bridge) checkTokenMinter(tokenAddr string, tokenVer float64) (err error
 	return nil
 }
 
-func printPeerTokens() {
-	log.Info(">>> begin print all peer tokens")
-	for tokenID, tokensMap := range PeerTokens {
-		log.Infof(">>> peer tokens of tokenID '%v' count is %v", tokenID, len(tokensMap))
+func printMultichainTokens() {
+	log.Info(">>> begin print all multichain tokens")
+	for tokenID, tokensMap := range MultichainTokens {
+		log.Infof(">>> multichain tokens of tokenID '%v' count is %v", tokenID, len(tokensMap))
 		for chainID, tokenAddr := range tokensMap {
-			log.Infof(">>> peer token: chainID %v tokenAddr %v", chainID, tokenAddr)
+			log.Infof(">>> multichain token: chainID %v tokenAddr %v", chainID, tokenAddr)
 		}
 	}
-	log.Info(">>> end print all peer tokens")
+	log.Info(">>> end print all multichain tokens")
 }
 
-// GetPeerToken get peer token address by tokenid and chainid
-func GetPeerToken(tokenID, chainID string) (tokenAddr string) {
+// GetMultichainToken get multichain token address by tokenid and chainid
+func GetMultichainToken(tokenID, chainID string) (tokenAddr string) {
 	tokenIDKey := strings.ToLower(tokenID)
-	tokens := PeerTokens[tokenIDKey]
+	tokens := MultichainTokens[tokenIDKey]
 	if tokens == nil {
 		return ""
 	}

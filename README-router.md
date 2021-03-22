@@ -84,12 +84,12 @@ token config struct is {
 token config data is 0x7b224944223a22616e79222c22446563696d616c73223a31382c22436f6e747261637441646472657373223a22307863323062356539326531636536336166366665353337343931663735633139303136656135666234222c22436f6e747261637456657273696f6e223a342c224d6178696d756d53776170223a313030303030302c224d696e696d756d53776170223a3130302c2242696756616c75655468726573686f6c64223a3130303030302c225377617046656552617465223a302e3030312c224d6178696d756d53776170466565223a31302c224d696e696d756d53776170466565223a317d
 ```
 
-### 4.3 set peer tokens
+### 4.3 set multichain tokens
 
 call the following contract function:
 ```solidity
-addPeerToken(string tokenID, uint256 chainID, address token)
-addPeerTokens(string tokenID, uint256[] chainIDs, address[] tokens)
+addMultichainToken(string tokenID, uint256 chainID, address token)
+addMultichainTokens(string tokenID, uint256[] chainIDs, address[] tokens)
 ```
 
 ### 4.4 set mpc address's public key
@@ -104,12 +104,12 @@ data is the hex string of mpc address's public key
 
 ## 5. add local config file
 
-please ref. [config-routerswap-example.toml](https://github.com/anyswap/CrossChain-Bridge/blob/master/params/config-routerswap-example.toml)
+please ref. [config-routerswap-example.toml](https://github.com/anyswap/CrossChain-Bridge/blob/router/params/config-routerswap-example.toml)
 
 ## 6. run swaprouter
 
 ```shell
-# for server run
+# for server run (add '--runserver' option)
 setsid ./build/bin/swaprouter --config config.toml --log logs/routerswap.log --runserver
 
 # for oracle run
@@ -127,5 +127,7 @@ get all sub command list and help info, run
 sub commands:
 
 `admin` is admin tool
+
 `config` is tool for generate chain and token config data
+
 `scanswap` is tool for scan and post swap register

@@ -221,9 +221,9 @@ func GetChainIDAtIndex(index uint64) (chainID *big.Int, err error) {
 	return common.GetBigIntFromStr(res)
 }
 
-// GetChainIDInRange abi
-func GetChainIDInRange(start, end uint64) (chainIDs []*big.Int, err error) {
-	funcHash := common.FromHex("0x454a8f28")
+// GetChainIDsInRange abi
+func GetChainIDsInRange(start, end uint64) (chainIDs []*big.Int, err error) {
+	funcHash := common.FromHex("0x60bb8b75")
 	data := make([]byte, 68)
 	copy(data[:4], funcHash)
 	copy(data[4:36], common.LeftPadBytes(big.NewInt(int64(start)).Bytes(), 32))
@@ -268,9 +268,9 @@ func GetTokenIDAtIndex(index uint64) (tokenID string, err error) {
 	return ParseStringInData(common.FromHex(res), 0)
 }
 
-// GetTokenIDInRange abi
-func GetTokenIDInRange(start, end uint64) (tokenIDs []string, err error) {
-	funcHash := common.FromHex("0xb22cb69a")
+// GetTokenIDsInRange abi
+func GetTokenIDsInRange(start, end uint64) (tokenIDs []string, err error) {
+	funcHash := common.FromHex("0x17394dac")
 	data := make([]byte, 68)
 	copy(data[:4], funcHash)
 	copy(data[4:36], common.LeftPadBytes(big.NewInt(int64(start)).Bytes(), 32))
@@ -282,9 +282,9 @@ func GetTokenIDInRange(start, end uint64) (tokenIDs []string, err error) {
 	return ParseStringSliceInData(common.FromHex(res), 0)
 }
 
-// GetPeerTokenOnChain abi
-func GetPeerTokenOnChain(tokenID string, chainID *big.Int) (tokenAddr string, err error) {
-	funcHash := common.FromHex("0x74268f22")
+// GetMultichainTokenOnChain abi
+func GetMultichainTokenOnChain(tokenID string, chainID *big.Int) (tokenAddr string, err error) {
+	funcHash := common.FromHex("0xe6729805")
 	length := len(tokenID)
 	padLength := (length + 31) / 32 * 32
 	data := make([]byte, 100+padLength)
@@ -300,9 +300,9 @@ func GetPeerTokenOnChain(tokenID string, chainID *big.Int) (tokenAddr string, er
 	return common.HexToAddress(res).String(), nil
 }
 
-// GetPeerTokenCount abi
-func GetPeerTokenCount(tokenID string) (count uint64, err error) {
-	funcHash := common.FromHex("0x7f5a6c71")
+// GetMultichainTokenCount abi
+func GetMultichainTokenCount(tokenID string) (count uint64, err error) {
+	funcHash := common.FromHex("0x628180fb")
 	data := getOneStrArgData(funcHash, tokenID)
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
@@ -315,9 +315,9 @@ func GetPeerTokenCount(tokenID string) (count uint64, err error) {
 	return bi.Uint64(), nil
 }
 
-// GetPeerTokenInRange abi
-func GetPeerTokenInRange(tokenID string, start, end uint64) (chainIDs []*big.Int, tokens []string, err error) {
-	funcHash := common.FromHex("0xeb1c5c87")
+// GetMultichainTokensInRange abi
+func GetMultichainTokensInRange(tokenID string, start, end uint64) (chainIDs []*big.Int, tokens []string, err error) {
+	funcHash := common.FromHex("0x105cc82e")
 	length := len(tokenID)
 	padLength := (length + 31) / 32 * 32
 	data := make([]byte, 132+padLength)
