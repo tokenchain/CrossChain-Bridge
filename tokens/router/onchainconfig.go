@@ -2,8 +2,11 @@ package router
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"math/big"
+	"sync/atomic"
+	"time"
 
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/common/hexutil"
@@ -20,9 +23,11 @@ var (
 	routerConfigClients  []*ethclient.Client
 	routerConfigCtx      = context.Background()
 
-	channels      = make([]chan<- ethtypes.Log, 0, 3)
+	channels      = make([]chan ethtypes.Log, 0, 3)
 	subscribes    = make([]ethereum.Subscription, 0, 3)
 	updateIDTopic = ethcommon.HexToHash("0x42772a2484b817bd374b06cf7d3ce1e7529d80f9030536688daeb8754e95925f")
+
+	latestUpdateIDBlock uint64
 )
 
 // InitRouterConfigClients init router config clients
@@ -58,6 +63,26 @@ func CallOnchainContract(data hexutil.Bytes, blockNumber string) (result []byte,
 // SubscribeUpdateID subscribe update ID and reload configs
 func SubscribeUpdateID() {
 	SubscribeRouterConfig([]ethcommon.Hash{updateIDTopic})
+	for _, ch := range channels {
+		go processUpdateID(ch)
+	}
+}
+
+func processUpdateID(ch <-chan ethtypes.Log) {
+	for {
+		rlog := <-ch
+
+		// sleep random in a second to mess steps
+		rNum, _ := rand.Int(rand.Reader, big.NewInt(1000))
+		time.Sleep(time.Duration(rNum.Uint64()) * time.Millisecond)
+
+		blockNumber := rlog.BlockNumber
+		oldBlock := atomic.LoadUint64(&latestUpdateIDBlock)
+		if blockNumber > oldBlock {
+			atomic.StoreUint64(&latestUpdateIDBlock, blockNumber)
+			ReloadRouterConfig()
+		}
+	}
 }
 
 // SubscribeRouterConfig subscribe router config
@@ -67,7 +92,7 @@ func SubscribeRouterConfig(topics []ethcommon.Hash) {
 		Topics:    [][]ethcommon.Hash{topics},
 	}
 	for i, cli := range routerConfigClients {
-		var ch chan<- ethtypes.Log
+		var ch chan ethtypes.Log
 		sub, err := cli.SubscribeFilterLogs(routerConfigCtx, fq, ch)
 		if err != nil {
 			log.Error("subscribe updateID failed", "index", i, "err", err)

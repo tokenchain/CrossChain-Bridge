@@ -74,6 +74,8 @@ func InitRouterBridges(isServer bool) {
 	cfg := params.GetRouterConfig()
 	dcrm.Init(cfg.Dcrm, isServer)
 
+	SubscribeUpdateID()
+
 	log.Info(">>> init router bridges success", "isServer", isServer)
 }
 
