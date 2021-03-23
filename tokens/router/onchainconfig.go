@@ -92,7 +92,7 @@ func SubscribeRouterConfig(topics []ethcommon.Hash) {
 		Topics:    [][]ethcommon.Hash{topics},
 	}
 	for i, cli := range routerConfigClients {
-		var ch chan ethtypes.Log
+		ch := make(chan ethtypes.Log)
 		sub, err := cli.SubscribeFilterLogs(routerConfigCtx, fq, ch)
 		if err != nil {
 			log.Error("subscribe updateID failed", "index", i, "err", err)
