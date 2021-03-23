@@ -86,12 +86,21 @@ func MustRegisterAccount() bool {
 
 // IsDcrmEnabled is dcrm enabled (for dcrm sign)
 func IsDcrmEnabled() bool {
+	if IsRouterSwap() {
+		return GetRouterConfig().Dcrm.Disable
+	}
 	return !GetConfig().Dcrm.Disable
 }
 
 // IsDcrmInitiator is initiator of dcrm sign
 func IsDcrmInitiator(account string) bool {
-	for _, initiator := range GetConfig().Dcrm.Initiators {
+	var initiators []string
+	if IsRouterSwap() {
+		initiators = GetRouterConfig().Dcrm.Initiators
+	} else {
+		initiators = GetConfig().Dcrm.Initiators
+	}
+	for _, initiator := range initiators {
 		if strings.EqualFold(account, initiator) {
 			return true
 		}
