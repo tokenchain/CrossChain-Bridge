@@ -50,6 +50,7 @@ type TokenConfig struct {
 	maxSwapFee       *big.Int
 	minSwapFee       *big.Int
 	bigValThreshhold *big.Int
+	underlying       common.Address
 }
 
 // GatewayConfig struct
@@ -146,6 +147,11 @@ func (c *TokenConfig) CheckConfig() error {
 // GetBigValueThreshold get big vaule threshold
 func (c *TokenConfig) GetBigValueThreshold() *big.Int {
 	return c.bigValThreshhold
+}
+
+// GetUnderlying get underlying
+func (c *TokenConfig) GetUnderlying() common.Address {
+	return c.underlying
 }
 
 func (c *TokenConfig) calcAndStoreValue() {

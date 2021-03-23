@@ -45,6 +45,8 @@ func GetRouterSwapStatusByVerifyError(err error) SwapStatus {
 		return TxWithWrongPath
 	case tokens.ErrMissTokenConfig:
 		return MissTokenConfig
+	case tokens.ErrNoUnderlyingToken:
+		return NoUnderlyingToken
 	default:
 		return TxVerifyFailed
 	}

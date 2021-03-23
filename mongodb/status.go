@@ -60,6 +60,7 @@ const (
 	RPCQueryError                           // 18
 	TxWithWrongPath                         // 19
 	MissTokenConfig                         // 20
+	NoUnderlyingToken                       // 21
 
 	EstimateGasFailed = 127
 	KeepStatus        = 255
@@ -179,6 +180,9 @@ func (status SwapStatus) String() string {
 		return "TxWithWrongPath"
 	case MissTokenConfig:
 		return "MissTokenConfig"
+	case NoUnderlyingToken:
+		return "NoUnderlyingToken"
+
 	case EstimateGasFailed:
 		return "EstimateGasFailed"
 	default:

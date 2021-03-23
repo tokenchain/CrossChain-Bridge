@@ -74,6 +74,8 @@ func updateSwapStatus(bridge *router.Bridge, fromChainID, txid string, logIndex 
 		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxWithWrongPath, now(), err.Error())
 	case tokens.ErrMissTokenConfig:
 		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.MissTokenConfig, now(), err.Error())
+	case tokens.ErrNoUnderlyingToken:
+		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.NoUnderlyingToken, now(), err.Error())
 	default:
 		return mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, mongodb.TxVerifyFailed, now(), err.Error())
 	}

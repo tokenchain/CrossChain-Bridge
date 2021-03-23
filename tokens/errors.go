@@ -53,6 +53,7 @@ var (
 	ErrRPCQueryError         = errors.New("rpc query error")
 	ErrTxWithWrongPath       = errors.New("swap trade tx with wrong path")
 	ErrMissTokenConfig       = errors.New("miss token config")
+	ErrNoUnderlyingToken     = errors.New("no underlying token")
 )
 
 // ShouldRegisterSwapForError return true if this error should record in database
@@ -77,7 +78,8 @@ func ShouldRegisterRouterSwapForError(err error) bool {
 	case nil,
 		ErrTxWithWrongValue,
 		ErrTxWithWrongPath,
-		ErrMissTokenConfig:
+		ErrMissTokenConfig,
+		ErrNoUnderlyingToken:
 		return true
 	}
 	return false

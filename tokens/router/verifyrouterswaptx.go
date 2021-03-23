@@ -57,6 +57,7 @@ func (b *Bridge) RegisterRouterSwapTx(txHash string, logIndex int) ([]*tokens.Tx
 	for i := startIndex; i < endIndex; i++ {
 		swapInfo := &tokens.TxSwapInfo{}
 		*swapInfo = *commonInfo
+		swapInfo.RouterSwapInfo = &tokens.RouterSwapInfo{}
 		swapInfo.LogIndex = i // LogIndex
 		err := b.verifyRouterSwapTxLog(swapInfo, receipt.Logs[i])
 		if err == nil {
@@ -178,7 +179,7 @@ func (b *Bridge) verifyRouterSwapTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.
 		return tokens.ErrSwapoutLogNotFound
 	}
 	if err != nil {
-		log.Debug(b.ChainConfig.BlockChain+" b.verifyRouterSwapTxLog fail", "tx", swapInfo.Hash, "logIndex", rlog.Index, "err", err)
+		log.Info(b.ChainConfig.BlockChain+" b.verifyRouterSwapTxLog fail", "tx", swapInfo.Hash, "logIndex", rlog.Index, "err", err)
 		return err
 	}
 	tokenCfg := b.GetTokenConfig(swapInfo.Token)
@@ -186,6 +187,11 @@ func (b *Bridge) verifyRouterSwapTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.
 		return tokens.ErrMissTokenConfig
 	}
 	swapInfo.TokenID = tokenCfg.ID
+	// NOTE: swap tx may fail as lack of balance if set 'ForUnderlying'
+	//# swapInfo.ForUnderlying = tokenCfg.GetUnderlying() != (common.Address{})
+	if swapInfo.ForUnderlying && tokenCfg.GetUnderlying() == (common.Address{}) {
+		return tokens.ErrNoUnderlyingToken
+	}
 	return nil
 }
 
@@ -195,7 +201,7 @@ func (b *Bridge) parseRouterSwapoutTxLog(swapInfo *tokens.TxSwapInfo, rlog *type
 		return tokens.ErrTxWithWrongTopics
 	}
 	logData := *rlog.Data
-	if len(logData) != 128 {
+	if len(logData) != 96 {
 		return errParseDataError
 	}
 	swapInfo.Token = common.BytesToAddress(logTopics[1].Bytes()).String()
@@ -204,7 +210,6 @@ func (b *Bridge) parseRouterSwapoutTxLog(swapInfo *tokens.TxSwapInfo, rlog *type
 	swapInfo.Value = common.GetBigInt(logData, 0, 32)
 	swapInfo.FromChainID = common.GetBigInt(logData, 32, 32)
 	swapInfo.ToChainID = common.GetBigInt(logData, 64, 32)
-	swapInfo.ForUnderlying = common.GetBigInt(logData, 96, 32).Sign() != 0
 	return nil
 }
 

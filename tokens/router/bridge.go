@@ -185,8 +185,10 @@ func (b *Bridge) initTokenConfig(tokenID string, chainID *big.Int) {
 	if err = b.checkTokenMinter(tokenAddr, tokenCfg.ContractVersion); err != nil {
 		log.Fatal("check token minter failed", "tokenID", tokenID, "chainID", chainID, "tokenAddr", tokenAddr, "err", err)
 	}
+	underlying, _ := b.GetUnderlyingAddress(tokenAddr)
+	tokenCfg.underlying = common.HexToAddress(underlying) // init underlying address
 	b.SetTokenConfig(tokenAddr, tokenCfg)
-	log.Info(fmt.Sprintf(">>> [%5v] init '%v' token config success", chainID, tokenID), "tokenAddr", tokenAddr, "decimals", tokenCfg.Decimals)
+	log.Info(fmt.Sprintf(">>> [%5v] init '%v' token config success", chainID, tokenID), "tokenAddr", tokenAddr, "decimals", tokenCfg.Decimals, "underlying", underlying)
 
 	tokenIDKey := strings.ToLower(tokenID)
 	tokensMap := MultichainTokens[tokenIDKey]
