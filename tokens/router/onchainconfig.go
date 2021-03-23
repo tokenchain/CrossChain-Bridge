@@ -23,9 +23,11 @@ var (
 	routerConfigClients  []*ethclient.Client
 	routerConfigCtx      = context.Background()
 
-	channels      = make([]chan ethtypes.Log, 0, 3)
-	subscribes    = make([]ethereum.Subscription, 0, 3)
-	updateIDTopic = ethcommon.HexToHash("0x42772a2484b817bd374b06cf7d3ce1e7529d80f9030536688daeb8754e95925f")
+	channels   = make([]chan ethtypes.Log, 0, 3)
+	subscribes = make([]ethereum.Subscription, 0, 3)
+
+	// topic of event 'UpdateConfig()'
+	updateConfigTopic = ethcommon.HexToHash("0x22590461e7ba17e1fe7580cb0ea47f283d3b2248f04873dfbe926d08fe4c5ab9")
 
 	latestUpdateIDBlock uint64
 )
@@ -62,7 +64,7 @@ func CallOnchainContract(data hexutil.Bytes, blockNumber string) (result []byte,
 
 // SubscribeUpdateID subscribe update ID and reload configs
 func SubscribeUpdateID() {
-	SubscribeRouterConfig([]ethcommon.Hash{updateIDTopic})
+	SubscribeRouterConfig([]ethcommon.Hash{updateConfigTopic})
 	for _, ch := range channels {
 		go processUpdateID(ch)
 	}
