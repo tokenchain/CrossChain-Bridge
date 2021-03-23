@@ -169,6 +169,13 @@ func (b *Bridge) initTokenConfig(tokenID string, chainID *big.Int) {
 	if common.HexToAddress(tokenAddr) != common.HexToAddress(tokenCfg.ContractAddress) {
 		log.Fatal("verify token address mismach", "tokenID", tokenID, "chainID", chainID, "inconfig", tokenCfg.ContractAddress, "inmultichain", tokenAddr)
 	}
+	decimals, err := b.GetErc20Decimals(tokenAddr)
+	if err != nil {
+		log.Fatal("get token decimals failed", "tokenAddr", tokenAddr, "err", err)
+	}
+	if decimals != tokenCfg.Decimals {
+		log.Fatal("token decimals mismatch", "tokenID", tokenID, "chainID", chainID, "tokenAddr", tokenAddr, "inconfig", tokenCfg.Decimals, "incontract", decimals)
+	}
 	if tokenID != tokenCfg.ID {
 		log.Fatal("verify token ID mismatch", "chainID", chainID, "inconfig", tokenCfg.ID, "intokenids", tokenID)
 	}
