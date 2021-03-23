@@ -69,14 +69,6 @@ func (b *Bridge) buildTx(args *tokens.BuildTxArgs, extra *tokens.EthExtraArgs) (
 		return nil, err
 	}
 
-	_, err = b.EstimateGas(args.From, args.To, value, input, "latest")
-	if err != nil {
-		log.Error("build routerswap tx estimate gas failed",
-			"swapID", args.SwapID, "from", args.From, "to", args.To,
-			"value", value, "data", hexutil.Bytes(input), "err", err)
-		return nil, tokens.ErrEstimateGasFailed
-	}
-
 	rawTx = types.NewTransaction(nonce, to, value, gasLimit, gasPrice, input)
 
 	log.Trace("build routerswap raw tx", "swapID", args.SwapID,
@@ -110,8 +102,20 @@ func (b *Bridge) setDefaults(args *tokens.BuildTxArgs) (extra *tokens.EthExtraAr
 		}
 	}
 	if extra.Gas == nil {
+		esGasLimit, errf := b.EstimateGas(args.From, args.To, args.Value, *args.Input, "latest")
+		if errf != nil {
+			log.Error("build routerswap tx estimate gas failed",
+				"swapID", args.SwapID, "from", args.From, "to", args.To,
+				"value", args.Value, "data", hexutil.Bytes(*args.Input), "err", errf)
+			return nil, tokens.ErrEstimateGasFailed
+		}
+		esGasLimit += esGasLimit * 30 / 100
+		defGasLimit := b.getDefaultGasLimit()
+		if esGasLimit < defGasLimit {
+			esGasLimit = defGasLimit
+		}
 		extra.Gas = new(uint64)
-		*extra.Gas = b.getDefaultGasLimit()
+		*extra.Gas = esGasLimit
 	}
 	return extra, nil
 }
