@@ -25,7 +25,7 @@ var (
 
 // RegisterRouterSwapTx impl
 func (b *Bridge) RegisterRouterSwapTx(txHash string, logIndex int) ([]*tokens.TxSwapInfo, []error) {
-	commonInfo := &tokens.TxSwapInfo{}
+	commonInfo := &tokens.TxSwapInfo{RouterSwapInfo: &tokens.RouterSwapInfo{}}
 	commonInfo.Hash = txHash // Hash
 
 	txStatus := b.GetTransactionStatus(txHash)
@@ -73,7 +73,7 @@ func (b *Bridge) RegisterRouterSwapTx(txHash string, logIndex int) ([]*tokens.Tx
 
 // VerifyRouterSwapTx impl
 func (b *Bridge) VerifyRouterSwapTx(txHash string, logIndex int, allowUnstable bool) (*tokens.TxSwapInfo, error) {
-	swapInfo := &tokens.TxSwapInfo{}
+	swapInfo := &tokens.TxSwapInfo{RouterSwapInfo: &tokens.RouterSwapInfo{}}
 	swapInfo.Hash = txHash       // Hash
 	swapInfo.LogIndex = logIndex // LogIndex
 

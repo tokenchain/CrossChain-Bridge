@@ -357,7 +357,7 @@ func GetRegisteredAddress(address string) (*RegisteredAddress, error) {
 // RegisterRouterSwap register router swap
 // if logIndex is 0 then check all logs, otherwise only check the specified log
 func RegisterRouterSwap(fromChainID, txid, logIndexStr string) (*MapIntResult, error) {
-	log.Debug("[api] receive router swap", "chainid", fromChainID, "txid", txid, "logIndex", logIndexStr)
+	log.Info("[api] register router swap", "chainid", fromChainID, "txid", txid, "logIndex", logIndexStr)
 	if !params.IsRouterSwap() {
 		return nil, tokens.ErrRouterSwapNotSupport
 	}
