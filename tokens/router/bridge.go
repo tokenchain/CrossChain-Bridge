@@ -238,8 +238,8 @@ func printMultichainTokens() {
 	log.Info(">>> end print all multichain tokens")
 }
 
-// GetMultichainToken get multichain token address by tokenid and chainid
-func GetMultichainToken(tokenID, chainID string) (tokenAddr string) {
+// GetCachedMultichainToken get multichain token address by tokenid and chainid
+func GetCachedMultichainToken(tokenID, chainID string) (tokenAddr string) {
 	tokenIDKey := strings.ToLower(tokenID)
 	tokens := MultichainTokens[tokenIDKey]
 	if tokens == nil {

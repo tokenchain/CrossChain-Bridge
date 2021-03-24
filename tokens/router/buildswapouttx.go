@@ -96,11 +96,12 @@ func (b *Bridge) getReceiverAndAmount(args *tokens.BuildTxArgs) (receiver common
 	}
 	amount = CalcSwapValue(fromTokenCfg, args.OriginValue)
 
-	tokenCfg := b.GetTokenConfig(args.Path[0])
-	if tokenCfg == nil {
+	multichainToken := GetCachedMultichainToken(args.TokenID, args.ToChainID.String())
+	if multichainToken == "" {
 		return receiver, amount, tokens.ErrMissTokenConfig
 	}
-	err = b.checkBalance(tokenCfg.ContractAddress, args.From, amount)
+
+	err = b.checkBalance(multichainToken, args.From, amount)
 	return receiver, amount, err
 }
 
