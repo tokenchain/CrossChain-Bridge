@@ -123,9 +123,13 @@ func processRouterSwap(swap *mongodb.MgoSwap) (err error) {
 }
 
 func getRouterSwapInfoFromSwap(swap *mongodb.MgoSwap) (*tokens.RouterSwapInfo, error) {
-	amountOutMin, err := common.GetBigIntFromStr(swap.AmountOutMin)
-	if err != nil {
-		return nil, fmt.Errorf("wrong amountOutMin %v", swap.AmountOutMin)
+	var amountOutMin *big.Int
+	var err error
+	if len(swap.Path) > 0 {
+		amountOutMin, err = common.GetBigIntFromStr(swap.AmountOutMin)
+		if err != nil {
+			return nil, fmt.Errorf("wrong amountOutMin %v", swap.AmountOutMin)
+		}
 	}
 	fromChainID, err := common.GetBigIntFromStr(swap.FromChainID)
 	if err != nil {

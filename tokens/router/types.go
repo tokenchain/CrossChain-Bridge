@@ -106,9 +106,6 @@ func (c *TokenConfig) CheckConfig() error {
 	if c.ContractAddress == "" {
 		return errors.New("token must config 'ContractAddress'")
 	}
-	if c.ContractVersion <= 0 {
-		return errors.New("token must config 'ContractVersion' (positive)")
-	}
 	if c.MaximumSwap <= 0 {
 		return errors.New("token must config 'MaximumSwap' (positive)")
 	}

@@ -215,7 +215,7 @@ func (b *Bridge) checkTokenMinter(tokenAddr string, tokenVer float64) (err error
 		return nil
 	case tokenVer == 3:
 		minterAddr, err = b.GetVaultAddress(tokenAddr)
-	case tokenVer < 3:
+	case tokenVer < 3 && tokenVer > 0:
 		minterAddr, err = b.GetOwnerAddress(tokenAddr)
 	}
 	if err != nil {
