@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/anyswap/CrossChain-Bridge/common"
-	"github.com/anyswap/CrossChain-Bridge/common/hexutil"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
@@ -109,7 +108,7 @@ func (b *Bridge) setDefaults(args *tokens.BuildTxArgs) (extra *tokens.EthExtraAr
 		if errf != nil {
 			log.Error("build routerswap tx estimate gas failed",
 				"swapID", args.SwapID, "from", args.From, "to", args.To,
-				"value", args.Value, "data", hexutil.Bytes(*args.Input), "err", errf)
+				"value", args.Value, "data", *args.Input, "err", errf)
 			return nil, tokens.ErrEstimateGasFailed
 		}
 		esGasLimit += esGasLimit * 30 / 100

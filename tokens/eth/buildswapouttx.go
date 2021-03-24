@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/anyswap/CrossChain-Bridge/common"
+	"github.com/anyswap/CrossChain-Bridge/common/hexutil"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 )
@@ -18,8 +19,8 @@ func (b *Bridge) buildSwapoutTxInput(args *tokens.BuildTxArgs, tokenCfg *tokens.
 		return b.buildErc20SwapoutTxInput(args)
 	default:
 		input := []byte(tokens.UnlockMemoPrefix + args.SwapID)
-		args.Input = &input // input
-		args.To = args.Bind // to
+		args.Input = (*hexutil.Bytes)(&input) // input
+		args.To = args.Bind                   // to
 		args.Value = tokens.CalcSwapValue(tokenCfg, args.OriginValue)
 	}
 	return nil
@@ -33,8 +34,8 @@ func (b *Bridge) buildErc20SwapoutTxInput(args *tokens.BuildTxArgs) (err error) 
 
 	funcHash := erc20CodeParts["transfer"]
 	input := PackDataWithFuncHash(funcHash, receiver, amount)
-	args.Input = &input             // input
-	args.To = token.ContractAddress // to
+	args.Input = (*hexutil.Bytes)(&input) // input
+	args.To = token.ContractAddress       // to
 
 	return b.checkBalance(token.ContractAddress, token.DcrmAddress, amount)
 }

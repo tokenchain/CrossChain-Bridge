@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/anyswap/CrossChain-Bridge/common"
+	"github.com/anyswap/CrossChain-Bridge/common/hexutil"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
@@ -49,7 +50,7 @@ func (b *Bridge) buildRouterSwapoutTxInput(args *tokens.BuildTxArgs) (err error)
 	}
 
 	input := PackDataWithFuncHash(funcHash, args.Token, receiver, amount, args.FromChainID)
-	args.Input = &input                    // input
+	args.Input = (*hexutil.Bytes)(&input)  // input
 	args.To = b.ChainConfig.RouterContract // to
 	args.SwapValue = amount                // swapValue
 
@@ -76,7 +77,7 @@ func (b *Bridge) buildRouterSwapTradeTxInput(args *tokens.BuildTxArgs) (err erro
 	deadline := time.Now().Unix() + swapDeadlineOffset
 
 	input := PackDataWithFuncHash(funcHash, args.SwapID, amount, args.AmountOutMin, toAddresses(args.Path), receiver, deadline, args.FromChainID)
-	args.Input = &input                    // input
+	args.Input = (*hexutil.Bytes)(&input)  // input
 	args.To = b.ChainConfig.RouterContract // to
 	args.SwapValue = amount                // swapValue
 

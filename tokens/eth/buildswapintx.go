@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/anyswap/CrossChain-Bridge/common"
+	"github.com/anyswap/CrossChain-Bridge/common/hexutil"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 )
@@ -28,9 +29,8 @@ func (b *Bridge) buildSwapinTxInput(args *tokens.BuildTxArgs) error {
 	amount := tokens.CalcSwappedValue(pairID, args.OriginValue, true)
 
 	input := PackDataWithFuncHash(funcHash, txHash, address, amount)
-	args.Input = &input // input
-
-	args.To = token.ContractAddress // to
+	args.Input = (*hexutil.Bytes)(&input) // input
+	args.To = token.ContractAddress       // to
 
 	if !token.IsDelegateContract {
 		return nil

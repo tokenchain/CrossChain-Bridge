@@ -6,6 +6,7 @@ import (
 
 	"github.com/anyswap/CrossChain-Bridge/cmd/utils"
 	"github.com/anyswap/CrossChain-Bridge/common"
+	"github.com/anyswap/CrossChain-Bridge/common/hexutil"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 	"github.com/anyswap/CrossChain-Bridge/tokens/eth"
@@ -147,7 +148,7 @@ func (ets *ethTxSender) buildTx() (rawTx interface{}, err error) {
 		From:  ets.sender,
 		To:    ets.receiver,
 		Value: ets.value,
-		Input: &ets.input,
+		Input: (*hexutil.Bytes)(&ets.input),
 		Extra: &tokens.AllExtras{
 			EthExtra: ethExtra,
 		},

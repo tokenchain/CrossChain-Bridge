@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/anyswap/CrossChain-Bridge/common"
+	"github.com/anyswap/CrossChain-Bridge/common/hexutil"
 	"github.com/anyswap/CrossChain-Bridge/tools"
 	"github.com/anyswap/CrossChain-Bridge/tools/crypto"
 )
@@ -224,14 +225,14 @@ type SwapInfo struct {
 // BuildTxArgs struct
 type BuildTxArgs struct {
 	SwapInfo    `json:"swapInfo,omitempty"`
-	From        string     `json:"from,omitempty"`
-	To          string     `json:"to,omitempty"`
-	Value       *big.Int   `json:"value,omitempty"`
-	OriginValue *big.Int   `json:"originValue,omitempty"`
-	SwapValue   *big.Int   `json:"swapValue,omitempty"`
-	Memo        string     `json:"memo,omitempty"`
-	Input       *[]byte    `json:"input,omitempty"`
-	Extra       *AllExtras `json:"extra,omitempty"`
+	From        string         `json:"from,omitempty"`
+	To          string         `json:"to,omitempty"`
+	Value       *big.Int       `json:"value,omitempty"`
+	OriginValue *big.Int       `json:"originValue,omitempty"`
+	SwapValue   *big.Int       `json:"swapValue,omitempty"`
+	Memo        string         `json:"memo,omitempty"`
+	Input       *hexutil.Bytes `json:"input,omitempty"`
+	Extra       *AllExtras     `json:"extra,omitempty"`
 }
 
 // GetExtraArgs get extra args
