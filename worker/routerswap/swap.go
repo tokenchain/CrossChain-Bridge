@@ -143,6 +143,7 @@ func getRouterSwapInfoFromSwap(swap *mongodb.MgoSwap) (*tokens.RouterSwapInfo, e
 		ForNative:     swap.ForNative,
 		ForUnderlying: swap.ForUnderlying,
 		Token:         swap.Token,
+		TokenID:       swap.TokenID,
 		Path:          swap.Path,
 		AmountOutMin:  amountOutMin,
 		FromChainID:   fromChainID,
