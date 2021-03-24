@@ -22,7 +22,8 @@ func SetLogger(logLevel uint32, jsonFormat, colorFormat bool) {
 	JSONFormat = jsonFormat
 	if JSONFormat {
 		logrus.SetFormatter(&logrus.JSONFormatter{
-			TimestampFormat: timestampFormat,
+			TimestampFormat:   timestampFormat,
+			DisableHTMLEscape: true,
 		})
 	} else {
 		logrus.SetFormatter(&logrus.TextFormatter{
