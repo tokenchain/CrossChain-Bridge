@@ -225,7 +225,7 @@ func processSwapTask(swapChan <-chan *tokens.BuildTxArgs) {
 		switch err {
 		case nil, errAlreadySwapped:
 		default:
-			logWorkerError("doSwap", "process router swap failed", err, "chainID", args.FromChainID, "txid", args.SwapID, "value", args.OriginValue)
+			logWorkerError("doSwap", "process router swap failed", err, "args", args)
 		}
 	}
 }

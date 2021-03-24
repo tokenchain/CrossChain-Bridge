@@ -92,12 +92,14 @@ func (b *Bridge) getReceiverAndAmount(args *tokens.BuildTxArgs) (receiver common
 	fromBridge := GetBridgeByChainID(args.FromChainID.String())
 	fromTokenCfg := fromBridge.GetTokenConfig(args.Token)
 	if fromTokenCfg == nil {
+		log.Warn("get token config failed", "chainID", args.FromChainID, "token", args.Token)
 		return receiver, amount, tokens.ErrMissTokenConfig
 	}
 	amount = CalcSwapValue(fromTokenCfg, args.OriginValue)
 
 	multichainToken := GetCachedMultichainToken(args.TokenID, args.ToChainID.String())
 	if multichainToken == "" {
+		log.Warn("get multichain token failed", "tokenID", args.TokenID, "chainID", args.ToChainID)
 		return receiver, amount, tokens.ErrMissTokenConfig
 	}
 
