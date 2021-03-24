@@ -406,6 +406,11 @@ func getRegisteredRouterSwap(fromChainID, txid string, logIndex int) (oldSwap *m
 	}
 	oldSwapRes, _ := mongodb.FindRouterSwapResult(fromChainID, txid, logIndex)
 	if oldSwapRes != nil {
+		if oldSwap != nil &&
+			oldSwap.Status == mongodb.EstimateGasFailed &&
+			oldSwapRes.Status == mongodb.MatchTxEmpty {
+			return oldSwap, false
+		}
 		return oldSwap, true
 	}
 	return oldSwap, false
