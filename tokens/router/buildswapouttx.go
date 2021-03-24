@@ -49,7 +49,19 @@ func (b *Bridge) buildRouterSwapoutTxInput(args *tokens.BuildTxArgs) (err error)
 		funcHash = AnySwapInFuncHash
 	}
 
-	input := PackDataWithFuncHash(funcHash, args.Token, receiver, amount, args.FromChainID)
+	multichainToken := GetCachedMultichainToken(args.TokenID, args.ToChainID.String())
+	if multichainToken == "" {
+		log.Warn("get multichain token failed", "tokenID", args.TokenID, "chainID", args.ToChainID)
+		return tokens.ErrMissTokenConfig
+	}
+
+	input := PackDataWithFuncHash(funcHash,
+		common.HexToHash(args.SwapID),
+		common.HexToAddress(multichainToken),
+		receiver,
+		amount,
+		args.FromChainID,
+	)
 	args.Input = (*hexutil.Bytes)(&input)  // input
 	args.To = b.ChainConfig.RouterContract // to
 	args.SwapValue = amount                // swapValue
@@ -76,7 +88,15 @@ func (b *Bridge) buildRouterSwapTradeTxInput(args *tokens.BuildTxArgs) (err erro
 	}
 	deadline := time.Now().Unix() + swapDeadlineOffset
 
-	input := PackDataWithFuncHash(funcHash, args.SwapID, amount, args.AmountOutMin, toAddresses(args.Path), receiver, deadline, args.FromChainID)
+	input := PackDataWithFuncHash(funcHash,
+		common.HexToHash(args.SwapID),
+		amount,
+		args.AmountOutMin,
+		toAddresses(args.Path),
+		receiver,
+		deadline,
+		args.FromChainID,
+	)
 	args.Input = (*hexutil.Bytes)(&input)  // input
 	args.To = b.ChainConfig.RouterContract // to
 	args.SwapValue = amount                // swapValue
