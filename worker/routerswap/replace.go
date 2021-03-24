@@ -77,7 +77,7 @@ func ReplaceRouterSwap(res *mongodb.MgoSwapResult, gasPrice *big.Int) error {
 		return fmt.Errorf("wrong value %v", res.Value)
 	}
 
-	fromChainID, txid, logIndex := res.FromChainID, res.TxID, res.LogIndex
+	txid := res.TxID
 	nonce := res.SwapNonce
 	args := &tokens.BuildTxArgs{
 		SwapInfo: tokens.SwapInfo{
@@ -102,7 +102,7 @@ func ReplaceRouterSwap(res *mongodb.MgoSwapResult, gasPrice *big.Int) error {
 	}
 	rawTx, err := resBridge.BuildRawTransaction(args)
 	if err != nil {
-		logWorkerError("replaceSwap", "build tx failed", err, "fromChainID", fromChainID, "toChainID", res.ToChainID, "txid", txid, "logIndex", logIndex)
+		logWorkerError("replaceSwap", "build tx failed", err, "chainID", res.ToChainID, "txid", txid, "logIndex", res.LogIndex)
 		return err
 	}
 	signedTx, txHash, err := dcrmSignTransaction(resBridge, rawTx, args.GetExtraArgs())
