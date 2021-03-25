@@ -373,10 +373,10 @@ func RegisterRouterSwap(fromChainID, txid, logIndexStr string) (*MapIntResult, e
 	result := MapIntResult(make(map[int]string))
 	swapInfos, errs := bridge.RegisterRouterSwapTx(txid, logIndex)
 	for i, swapInfo := range swapInfos {
-		err = errs[i]
+		verifyErr := errs[i]
 		logIndex := swapInfo.LogIndex
-		if !tokens.ShouldRegisterRouterSwapForError(err) {
-			result[logIndex] = "failed: " + err.Error()
+		if !tokens.ShouldRegisterRouterSwapForError(verifyErr) {
+			result[logIndex] = "failed: " + verifyErr.Error()
 			continue
 		}
 		oldSwap, registeredOk := getRegisteredRouterSwap(fromChainID, txid, logIndex)
@@ -386,14 +386,18 @@ func RegisterRouterSwap(fromChainID, txid, logIndexStr string) (*MapIntResult, e
 		}
 		result[logIndex] = "success"
 		var memo string
-		if err != nil {
-			memo = err.Error()
+		if verifyErr != nil {
+			memo = verifyErr.Error()
 		}
-		newStatus := mongodb.GetRouterSwapStatusByVerifyError(err)
+		newStatus := mongodb.GetRouterSwapStatusByVerifyError(verifyErr)
 		if oldSwap == nil {
-			_ = addMgoSwap(swapInfo, newStatus, memo)
+			err = addMgoSwap(swapInfo, newStatus, memo)
 		} else if newStatus != oldSwap.Status {
-			_ = mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, newStatus, time.Now().Unix(), memo)
+			log.Info("update swap status", "chainid", fromChainID, "txid", txid, "logIndex", logIndexStr, "oldStatus", oldSwap.Status, "newStatus", newStatus)
+			err = mongodb.UpdateRouterSwapStatus(fromChainID, txid, logIndex, newStatus, time.Now().Unix(), memo)
+		}
+		if err != nil {
+			log.Info("register swap db error", "chainid", fromChainID, "txid", txid, "logIndex", logIndexStr, "err", err)
 		}
 	}
 	return &result, nil
@@ -401,16 +405,14 @@ func RegisterRouterSwap(fromChainID, txid, logIndexStr string) (*MapIntResult, e
 
 func getRegisteredRouterSwap(fromChainID, txid string, logIndex int) (oldSwap *mongodb.MgoSwap, registeredOk bool) {
 	oldSwap, _ = mongodb.FindRouterSwap(fromChainID, txid, logIndex)
-	if oldSwap != nil && oldSwap.Status.IsRegisteredOk() {
+	if oldSwap == nil {
+		return nil, false
+	}
+	if oldSwap.Status.IsRegisteredOk() {
 		return oldSwap, true
 	}
 	oldSwapRes, _ := mongodb.FindRouterSwapResult(fromChainID, txid, logIndex)
-	if oldSwapRes != nil {
-		if oldSwap != nil &&
-			oldSwap.Status == mongodb.EstimateGasFailed &&
-			oldSwapRes.Status == mongodb.MatchTxEmpty {
-			return oldSwap, false
-		}
+	if oldSwapRes != nil && oldSwapRes.SwapTx != "" {
 		return oldSwap, true
 	}
 	return oldSwap, false
