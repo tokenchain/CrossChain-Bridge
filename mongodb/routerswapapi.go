@@ -46,8 +46,13 @@ func UpdateRouterSwapStatus(fromChainID, txid string, logindex int, status SwapS
 		retryLock.Lock()
 		defer retryLock.Unlock()
 		swap, _ := FindRouterSwap(fromChainID, txid, logindex)
-		if !(swap.Status.CanRetry() || swap.Status.CanReverify()) {
-			return nil
+		if swap.Status.IsRegisteredOk() {
+			return fmt.Errorf("forbid update swap status to TxNotStable from %v", swap.Status.String())
+		}
+		result := &MgoSwapResult{}
+		err := collRouterSwapResult.FindId(key).One(result)
+		if err == nil && result.SwapTx != "" {
+			return fmt.Errorf("forbid update swap status to TxNotStable as swaptx exist %v", result.SwapTx)
 		}
 	}
 	err := collRouterSwap.UpdateId(key, bson.M{"$set": updates})
