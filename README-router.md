@@ -65,7 +65,7 @@ setTokenConfig(string tokenID, uint256 chainID, address tokenAddr, bytes data)
 data can be generate by the following method:
 
 ```shell
-./build/bin/swaprouter config genTokenConfigData --c.ID any --c.ContractAddress 0xc20b5e92e1ce63af6fe537491f75c19016ea5fb4 --c.ContractVersion 4 --c.MaximumSwap 1000000 --c.MinimumSwap 100 --c.BigValueThreshold 100000 --c.SwapFeeRate 0.001 --c.MaximumSwapFee 10 --c.MinimumSwapFee 1
+./build/bin/swaprouter config genTokenConfigData --c.ID any --c.Decimals 18 --c.ContractAddress 0xc20b5e92e1ce63af6fe537491f75c19016ea5fb4 --c.ContractVersion 4 --c.MaximumSwap 1000000 --c.MinimumSwap 100 --c.BigValueThreshold 100000 --c.SwapFeeRate 0.001 --c.MaximumSwapFee 10 --c.MinimumSwapFee 1
 
 Output:
 

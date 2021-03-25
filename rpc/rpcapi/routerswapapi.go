@@ -23,6 +23,13 @@ type RouterSwapKeyArgs struct {
 	LogIndex string `json:"logindex"`
 }
 
+// GetVersionInfo api
+func (s *RouterSwapAPI) GetVersionInfo(r *http.Request, args *RPCNullArgs, result *string) error {
+	version := params.VersionWithMeta
+	*result = version
+	return nil
+}
+
 // RegisterRouterSwap api
 func (s *RouterSwapAPI) RegisterRouterSwap(r *http.Request, args *RouterSwapKeyArgs, result *swapapi.MapIntResult) error {
 	res, err := swapapi.RegisterRouterSwap(args.ChainID, args.TxID, args.LogIndex)
