@@ -195,7 +195,7 @@ func (b *Bridge) verifyRouterSwapTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.
 	if tokenCfg == nil {
 		return tokens.ErrMissTokenConfig
 	}
-	swapInfo.TokenID = tokenCfg.ID
+	swapInfo.TokenID = tokenCfg.TokenID
 	// NOTE: swap tx may fail as lack of balance if set 'ForUnderlying'
 	//# swapInfo.ForUnderlying = tokenCfg.GetUnderlying() != (common.Address{})
 	if swapInfo.ForUnderlying && tokenCfg.GetUnderlying() == (common.Address{}) {

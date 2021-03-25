@@ -176,8 +176,8 @@ func (b *Bridge) initTokenConfig(tokenID string, chainID *big.Int) {
 	if decimals != tokenCfg.Decimals {
 		log.Fatal("token decimals mismatch", "tokenID", tokenID, "chainID", chainID, "tokenAddr", tokenAddr, "inconfig", tokenCfg.Decimals, "incontract", decimals)
 	}
-	if tokenID != tokenCfg.ID {
-		log.Fatal("verify token ID mismatch", "chainID", chainID, "inconfig", tokenCfg.ID, "intokenids", tokenID)
+	if tokenID != tokenCfg.TokenID {
+		log.Fatal("verify token ID mismatch", "chainID", chainID, "inconfig", tokenCfg.TokenID, "intokenids", tokenID)
 	}
 	if err = tokenCfg.CheckConfig(); err != nil {
 		log.Fatal("check token config failed", "tokenID", tokenID, "chainID", chainID, "tokenAddr", tokenAddr, "err", err)

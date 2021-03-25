@@ -13,10 +13,10 @@ import (
 
 // ChainConfig struct
 type ChainConfig struct {
-	BlockChain              string
 	ChainID                 string
-	Confirmations           uint64
+	BlockChain              string
 	RouterContract          string
+	Confirmations           uint64
 	InitialHeight           uint64 `json:",omitempty"`
 	WaitTimeToReplace       int64  `json:",omitempty"` // seconds
 	MaxReplaceCount         int    `json:",omitempty"`
@@ -33,7 +33,7 @@ type ChainConfig struct {
 
 // TokenConfig struct
 type TokenConfig struct {
-	ID                string
+	TokenID           string
 	Decimals          uint8
 	ContractAddress   string
 	ContractVersion   float64
@@ -100,8 +100,8 @@ func (c *ChainConfig) GetRouterFactory() string {
 // CheckConfig check token config
 // nolint:gocyclo // check all together
 func (c *TokenConfig) CheckConfig() error {
-	if c.ID == "" {
-		return errors.New("token must config 'ID'")
+	if c.TokenID == "" {
+		return errors.New("token must config 'TokenID'")
 	}
 	if c.ContractAddress == "" {
 		return errors.New("token must config 'ContractAddress'")

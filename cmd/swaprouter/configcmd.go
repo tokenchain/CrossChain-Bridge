@@ -46,7 +46,7 @@ generate ChainConfig json marshal data
 				Usage:  "generate TokenConfig json marshal data",
 				Action: genTokenConfigData,
 				Flags: []cli.Flag{
-					cIDFlag,
+					cTokenIDFlag,
 					cDecimalsFlag,
 					cContractAddressFlag,
 					cContractVersionFlag,
@@ -87,23 +87,23 @@ decode hex string
 
 	// --------- chain config -------------------
 
-	cBlockChainFlag = &cli.StringFlag{
-		Name:  "c.BlockChain",
-		Usage: "chain config (require)",
-	}
-
 	cChainIDFlag = &cli.StringFlag{
 		Name:  "c.ChainID",
 		Usage: "chain config (require)",
 	}
 
-	cConfirmationsFlag = &cli.Uint64Flag{
-		Name:  "c.Confirmations",
+	cBlockChainFlag = &cli.StringFlag{
+		Name:  "c.BlockChain",
 		Usage: "chain config (require)",
 	}
 
 	cRouterContractFlag = &cli.StringFlag{
 		Name:  "c.RouterContract",
+		Usage: "chain config (require)",
+	}
+
+	cConfirmationsFlag = &cli.Uint64Flag{
+		Name:  "c.Confirmations",
 		Usage: "chain config (require)",
 	}
 
@@ -148,8 +148,8 @@ decode hex string
 
 	// --------- token config -------------------
 
-	cIDFlag = &cli.StringFlag{
-		Name:  "c.ID",
+	cTokenIDFlag = &cli.StringFlag{
+		Name:  "c.TokenID",
 		Usage: "token config (require)",
 	}
 
@@ -202,10 +202,10 @@ decode hex string
 
 func genChainConfigData(ctx *cli.Context) error {
 	chainCfg := &router.ChainConfig{
-		BlockChain:              ctx.String(cBlockChainFlag.Name),
 		ChainID:                 ctx.String(cChainIDFlag.Name),
-		Confirmations:           ctx.Uint64(cConfirmationsFlag.Name),
+		BlockChain:              ctx.String(cBlockChainFlag.Name),
 		RouterContract:          ctx.String(cRouterContractFlag.Name),
+		Confirmations:           ctx.Uint64(cConfirmationsFlag.Name),
 		InitialHeight:           ctx.Uint64(cInitialHeightFlag.Name),
 		WaitTimeToReplace:       ctx.Int64(cWaitTimeToReplaceFlag.Name),
 		MaxReplaceCount:         ctx.Int(cMaxReplaceCountFlag.Name),
@@ -237,7 +237,7 @@ func genTokenConfigData(ctx *cli.Context) error {
 		return fmt.Errorf("wrong decimals '%v'", decimals)
 	}
 	tokenCfg := &router.TokenConfig{
-		ID:                ctx.String(cIDFlag.Name),
+		TokenID:           ctx.String(cTokenIDFlag.Name),
 		Decimals:          uint8(decimals),
 		ContractAddress:   ctx.String(cContractAddressFlag.Name),
 		ContractVersion:   ctx.Float64(cContractVersionFlag.Name),
