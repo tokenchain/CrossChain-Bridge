@@ -76,6 +76,9 @@ type MongoDBConfig struct {
 
 // GetIdentifier get identifier (to distiguish in dcrm accept)
 func GetIdentifier() string {
+	if IsRouterSwap() {
+		return GetRouterConfig().Identifier
+	}
 	return GetConfig().Identifier
 }
 
@@ -87,7 +90,7 @@ func MustRegisterAccount() bool {
 // IsDcrmEnabled is dcrm enabled (for dcrm sign)
 func IsDcrmEnabled() bool {
 	if IsRouterSwap() {
-		return GetRouterConfig().Dcrm.Disable
+		return !GetRouterConfig().Dcrm.Disable
 	}
 	return !GetConfig().Dcrm.Disable
 }
