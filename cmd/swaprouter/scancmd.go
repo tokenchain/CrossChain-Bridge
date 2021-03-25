@@ -132,7 +132,7 @@ func (scanner *routerSwapScanner) init() {
 	if err != nil {
 		log.Fatal("rpc get chain id failed", "gateway", scanner.gateway, "err", err)
 	}
-	scanner.chainID = biChainID.String()
+	scanner.chainID = biChainID.ToInt().String()
 
 	var version string
 	for i := 0; i < scanner.rpcRetryCount; i++ {
@@ -286,14 +286,14 @@ func (scanner *routerSwapScanner) scanTransaction(tx *types.Transaction) {
 
 func (scanner *routerSwapScanner) postSwap(chainID, txid string, logIndex int) {
 	subject := "post router swap register"
-	rpcMethod := "swap.RouterSwap"
+	rpcMethod := "swap.RegisterRouterSwap"
 	log.Info(subject, "chainid", chainID, "txid", txid, "logindex", logIndex)
 
 	var result interface{}
-	args := map[string]interface{}{
+	args := map[string]string{
 		"chainid":  chainID,
 		"txid":     txid,
-		"logindex": logIndex,
+		"logindex": fmt.Sprintf("%d", logIndex),
 	}
 	for i := 0; i < scanner.rpcRetryCount; i++ {
 		err := client.RPCPost(&result, scanner.swapServer, rpcMethod, args)
