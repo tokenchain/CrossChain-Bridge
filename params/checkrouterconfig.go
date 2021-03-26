@@ -27,8 +27,8 @@ func CallContractWithGateway(gateway, contract string, data hexutil.Bytes, block
 
 // CheckConfig check router config
 func (config *RouterConfig) CheckConfig(isServer bool) (err error) {
-	if config.Identifier != RouterSwapIdentifier {
-		return fmt.Errorf("wrong identifier, have '%v', want '%v'", config.Identifier, RouterSwapIdentifier)
+	if !strings.HasPrefix(config.Identifier, RouterSwapPrefixID) || config.Identifier == RouterSwapPrefixID {
+		return fmt.Errorf("wrong identifier '%v', missing prefix '%v'", config.Identifier, RouterSwapPrefixID)
 	}
 	log.Info("check identifier pass", "identifier", config.Identifier, "isServer", isServer)
 	if isServer {

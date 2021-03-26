@@ -46,7 +46,7 @@ func (b *Bridge) BuildRawTransaction(args *tokens.BuildTxArgs) (rawTx interface{
 		return nil, err
 	}
 
-	args.Identifier = params.RouterSwapIdentifier
+	args.Identifier = params.GetIdentifier()
 
 	return b.buildTx(args, extra)
 }

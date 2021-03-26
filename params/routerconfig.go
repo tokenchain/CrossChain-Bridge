@@ -11,7 +11,7 @@ import (
 
 // router swap constants
 const (
-	RouterSwapIdentifier = "routerswap"
+	RouterSwapPrefixID = "routerswap"
 )
 
 var (
@@ -69,7 +69,7 @@ func IsRouterAdmin(account string) bool {
 
 // IsRouterSwap is router swap
 func IsRouterSwap() bool {
-	return strings.EqualFold(routerConfig.Identifier, RouterSwapIdentifier)
+	return strings.HasPrefix(routerConfig.Identifier, RouterSwapPrefixID)
 }
 
 // IsChainIDInBlackList is chain id in black list

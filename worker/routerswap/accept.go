@@ -46,7 +46,7 @@ func StartAcceptSignJob() {
 		for _, info := range signInfo {
 			keyID := info.Key
 			history := getAcceptSignHistory(keyID)
-			if history != nil {
+			if history != nil && history.result != "IGNORE" {
 				logWorker("accept", "history sign", "keyID", keyID, "result", history.result)
 				_, _ = dcrm.DoAcceptSign(keyID, history.result, history.msgHash, history.msgContext)
 				continue
@@ -54,14 +54,15 @@ func StartAcceptSignJob() {
 			agreeResult := "AGREE"
 			err := verifySignInfo(info)
 			switch err {
+			case tokens.ErrTxNotStable, tokens.ErrTxNotFound:
+				logWorkerTrace("accept", "ignore sign", "keyID", keyID, "err", err)
+				continue
 			case errIdentifierMismatch,
 				errInitiatorMismatch,
 				errWrongMsgContext,
-				tokens.ErrNoBridgeForChainID,
-				tokens.ErrRouterSwapNotSupport,
-				tokens.ErrTxNotStable,
-				tokens.ErrTxNotFound:
+				tokens.ErrTxWithWrongContract:
 				logWorkerTrace("accept", "ignore sign", "keyID", keyID, "err", err)
+				addAcceptSignHistory(keyID, "IGNORE", info.MsgHash, info.MsgContext)
 				continue
 			}
 			if err != nil {
@@ -96,7 +97,7 @@ func verifySignInfo(signInfo *dcrm.SignInfoData) error {
 		return errWrongMsgContext
 	}
 	switch args.Identifier {
-	case params.RouterSwapIdentifier:
+	case params.GetIdentifier():
 	case tokens.ReplaceSwapIdentifier:
 	default:
 		return errIdentifierMismatch

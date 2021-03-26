@@ -1,5 +1,5 @@
-# a short string to identify the bridge
-Identifier = "routerswap"
+# router swap identifier, must have prefix 'routerswap'
+Identifier = "routerswap#20210326"
 
 
 # router sever config (server only)
