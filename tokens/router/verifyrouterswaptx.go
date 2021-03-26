@@ -26,7 +26,8 @@ var (
 // RegisterRouterSwapTx impl
 func (b *Bridge) RegisterRouterSwapTx(txHash string, logIndex int) ([]*tokens.TxSwapInfo, []error) {
 	commonInfo := &tokens.TxSwapInfo{RouterSwapInfo: &tokens.RouterSwapInfo{}}
-	commonInfo.Hash = txHash // Hash
+	commonInfo.Hash = txHash       // Hash
+	commonInfo.LogIndex = logIndex // LogIndex
 
 	txStatus := b.GetTransactionStatus(txHash)
 	if txStatus.BlockHeight == 0 {
@@ -44,7 +45,7 @@ func (b *Bridge) RegisterRouterSwapTx(txHash string, logIndex int) ([]*tokens.Tx
 
 	swapInfos := make([]*tokens.TxSwapInfo, 0)
 	errs := make([]error, 0)
-	startIndex, endIndex := 0, len(receipt.Logs)
+	startIndex, endIndex := 1, len(receipt.Logs)
 
 	if logIndex != 0 {
 		if logIndex >= endIndex || logIndex < 0 {
@@ -60,13 +61,20 @@ func (b *Bridge) RegisterRouterSwapTx(txHash string, logIndex int) ([]*tokens.Tx
 		swapInfo.RouterSwapInfo = &tokens.RouterSwapInfo{}
 		swapInfo.LogIndex = i // LogIndex
 		err := b.verifyRouterSwapTxLog(swapInfo, receipt.Logs[i])
-		if err == nil {
+		switch err {
+		case tokens.ErrSwapoutLogNotFound:
+			continue
+		case nil:
 			err = b.checkRouterSwapInfo(swapInfo)
+		default:
+			log.Debug(b.ChainConfig.BlockChain+" register swap error", "txHash", txHash, "logIndex", swapInfo.LogIndex, "err", err)
 		}
-		if tokens.ShouldRegisterRouterSwapForError(err) {
-			swapInfos = append(swapInfos, swapInfo)
-			errs = append(errs, err)
-		}
+		swapInfos = append(swapInfos, swapInfo)
+		errs = append(errs, err)
+	}
+
+	if len(swapInfos) == 0 {
+		return []*tokens.TxSwapInfo{commonInfo}, []error{tokens.ErrSwapoutLogNotFound}
 	}
 
 	return swapInfos, errs
@@ -163,10 +171,6 @@ func (b *Bridge) verifyRouterSwapTxReceipt(swapInfo *tokens.TxSwapInfo, receipt 
 }
 
 func (b *Bridge) verifyRouterSwapTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.RPCLog) (err error) {
-	if rlog.Removed != nil && *rlog.Removed {
-		return tokens.ErrTxWithRemovedLog
-	}
-
 	logTopic := rlog.Topics[0].Bytes()
 	switch {
 	case bytes.Equal(logTopic, LogAnySwapOutTopic):
@@ -182,6 +186,11 @@ func (b *Bridge) verifyRouterSwapTxLog(swapInfo *tokens.TxSwapInfo, rlog *types.
 		log.Info(b.ChainConfig.BlockChain+" b.verifyRouterSwapTxLog fail", "tx", swapInfo.Hash, "logIndex", rlog.Index, "err", err)
 		return err
 	}
+
+	if rlog.Removed != nil && *rlog.Removed {
+		return tokens.ErrTxWithRemovedLog
+	}
+
 	tokenCfg := b.GetTokenConfig(swapInfo.Token)
 	if tokenCfg == nil {
 		return tokens.ErrMissTokenConfig

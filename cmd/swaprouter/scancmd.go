@@ -13,9 +13,7 @@ import (
 	"github.com/anyswap/CrossChain-Bridge/common/hexutil"
 	"github.com/anyswap/CrossChain-Bridge/log"
 	"github.com/anyswap/CrossChain-Bridge/rpc/client"
-	"github.com/anyswap/CrossChain-Bridge/tokens"
 	"github.com/anyswap/CrossChain-Bridge/tokens/router"
-	"github.com/anyswap/CrossChain-Bridge/tokens/tools"
 	"github.com/fsn-dev/fsn-go-sdk/efsn/common"
 	"github.com/fsn-dev/fsn-go-sdk/efsn/core/types"
 	"github.com/fsn-dev/fsn-go-sdk/efsn/ethclient"
@@ -268,7 +266,8 @@ func (scanner *routerSwapScanner) scanTransaction(tx *types.Transaction) {
 		return
 	}
 
-	for i, rlog := range receipt.Logs {
+	for i := 1; i < len(receipt.Logs); i++ {
+		rlog := receipt.Logs[i]
 		if rlog.Removed {
 			continue
 		}
@@ -280,7 +279,7 @@ func (scanner *routerSwapScanner) scanTransaction(tx *types.Transaction) {
 		default:
 			continue
 		}
-		scanner.postSwap(scanner.chainID, txHash.String(), i+1)
+		scanner.postSwap(scanner.chainID, txHash.String(), i)
 	}
 }
 
@@ -295,15 +294,11 @@ func (scanner *routerSwapScanner) postSwap(chainID, txid string, logIndex int) {
 		"txid":     txid,
 		"logindex": fmt.Sprintf("%d", logIndex),
 	}
-	for i := 0; i < scanner.rpcRetryCount; i++ {
-		err := client.RPCPost(&result, scanner.swapServer, rpcMethod, args)
-		if tokens.ShouldRegisterRouterSwapForError(err) {
-			break
-		}
-		if tools.IsSwapAlreadyExistRegisterError(err) {
-			break
-		}
-		log.Warn(subject+" failed", "chainid", chainID, "txid", txid, "logindex", logIndex, "err", err)
+	err := client.RPCPost(&result, scanner.swapServer, rpcMethod, args)
+	if err != nil {
+		log.Warn(subject+" result", "chainid", chainID, "txid", txid, "logindex", logIndex, "result", result, "err", err)
+	} else {
+		log.Info(subject+" result", "chainid", chainID, "txid", txid, "logindex", logIndex, "result", result)
 	}
 }
 
