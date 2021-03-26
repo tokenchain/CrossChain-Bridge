@@ -199,7 +199,7 @@ func (b *Bridge) initTokenConfig(tokenID string, chainID *big.Int) {
 	tokensMap[chainID.String()] = tokenAddr
 }
 
-func (b *Bridge) checkTokenMinter(tokenAddr string, tokenVer float64) (err error) {
+func (b *Bridge) checkTokenMinter(tokenAddr string, tokenVer uint64) (err error) {
 	routerContract := b.ChainConfig.RouterContract
 	var minterAddr string
 	var isMinter bool

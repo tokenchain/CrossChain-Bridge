@@ -49,6 +49,8 @@ func PackData(args ...interface{}) []byte {
 			copy(bs[i*32:], packBigInt(big.NewInt(v)))
 		case int:
 			copy(bs[i*32:], packBigInt(big.NewInt(int64(v))))
+		case uint8:
+			copy(bs[i*32:], packBigInt(big.NewInt(int64(v))))
 		default:
 			log.Fatalf("unsupported to pack %v (%T)", v, v)
 		}

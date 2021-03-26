@@ -1,9 +1,9 @@
 package main
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/big"
 
 	"github.com/anyswap/CrossChain-Bridge/cmd/utils"
 	"github.com/anyswap/CrossChain-Bridge/common"
@@ -21,14 +21,14 @@ config router swap
 `,
 		Subcommands: []*cli.Command{
 			{
-				Name:   "genChainConfigData",
-				Usage:  "generate ChainConfig json marshal data",
-				Action: genChainConfigData,
+				Name:   "genSetChainConfigData",
+				Usage:  "generate setChainConfig input data",
+				Action: genSetChainConfigData,
 				Flags: []cli.Flag{
-					cBlockChainFlag,
 					cChainIDFlag,
-					cConfirmationsFlag,
+					cBlockChainFlag,
 					cRouterContractFlag,
+					cConfirmationsFlag,
 					cInitialHeightFlag,
 					cWaitTimeToReplaceFlag,
 					cMaxReplaceCountFlag,
@@ -42,10 +42,11 @@ generate ChainConfig json marshal data
 `,
 			},
 			{
-				Name:   "genTokenConfigData",
-				Usage:  "generate TokenConfig json marshal data",
-				Action: genTokenConfigData,
+				Name:   "genSetTokenConfigData",
+				Usage:  "generate setTokenConfig input data",
+				Action: genSetTokenConfigData,
 				Flags: []cli.Flag{
+					cChainIDFlag,
 					cTokenIDFlag,
 					cDecimalsFlag,
 					cContractAddressFlag,
@@ -59,27 +60,6 @@ generate ChainConfig json marshal data
 				},
 				Description: `
 generate TokenConfig json marshal data
-`,
-			},
-			{
-				Name:      "packCallStrArray",
-				Usage:     "pack data calling method with one string array",
-				ArgsUsage: "<methodName> [args...]",
-				Action:    packCallStrArray,
-				Flags:     []cli.Flag{},
-				Description: `
-pack input data of calling method with just one string array parameter
-(eg. setTokenIDs(string[])) in the way same as abi coder v2.
-`,
-			},
-			{
-				Name:      "decodeHex",
-				Usage:     "decode hex string",
-				ArgsUsage: "<hex string>",
-				Action:    decodeHex,
-				Flags:     []cli.Flag{},
-				Description: `
-decode hex string
 `,
 			},
 		},
@@ -164,7 +144,7 @@ decode hex string
 		Usage: "token config (require)",
 	}
 
-	cContractVersionFlag = &cli.Float64Flag{
+	cContractVersionFlag = &cli.Uint64Flag{
 		Name:  "c.ContractVersion",
 		Usage: "token config (require)",
 	}
@@ -200,7 +180,7 @@ decode hex string
 	}
 )
 
-func genChainConfigData(ctx *cli.Context) error {
+func genSetChainConfigData(ctx *cli.Context) error {
 	chainCfg := &router.ChainConfig{
 		ChainID:                 ctx.String(cChainIDFlag.Name),
 		BlockChain:              ctx.String(cBlockChainFlag.Name),
@@ -223,24 +203,43 @@ func genChainConfigData(ctx *cli.Context) error {
 		return err
 	}
 	fmt.Println("chain config struct is", string(jsdata))
-	jsdata, err = json.Marshal(chainCfg)
-	if err != nil {
-		return err
-	}
-	fmt.Println("chain config data is", common.ToHex(jsdata))
+	funcHash := common.FromHex("0xdefb3a0d")
+	configData := router.PackData(
+		chainCfg.BlockChain,
+		common.HexToAddress(chainCfg.RouterContract),
+		chainCfg.Confirmations,
+		chainCfg.InitialHeight,
+		chainCfg.WaitTimeToReplace,
+		chainCfg.MaxReplaceCount,
+		chainCfg.SwapDeadlineOffset,
+		chainCfg.PlusGasPricePercentage,
+		chainCfg.MaxGasPriceFluctPercent,
+		chainCfg.DefaultGasLimit,
+	)
+	chainID, _ := new(big.Int).SetString(chainCfg.ChainID, 0)
+	inputData := router.PackDataWithFuncHash(funcHash, chainID)
+	inputData = append(inputData, common.LeftPadBytes([]byte{0x40}, 32)...)
+	inputData = append(inputData, configData...)
+	fmt.Println("set chain config input data is", common.ToHex(inputData))
 	return nil
 }
 
-func genTokenConfigData(ctx *cli.Context) error {
-	decimals := ctx.Int(cDecimalsFlag.Name)
-	if decimals < 0 || decimals > 256 {
-		return fmt.Errorf("wrong decimals '%v'", decimals)
+func genSetTokenConfigData(ctx *cli.Context) error {
+	chainIDStr := ctx.String(cChainIDFlag.Name)
+	chainID, err := common.GetBigIntFromStr(chainIDStr)
+	if err != nil {
+		return fmt.Errorf("wrong chainID '%v'", chainIDStr)
 	}
+	decimalsVal := ctx.Int(cDecimalsFlag.Name)
+	if decimalsVal < 0 || decimalsVal > 256 {
+		return fmt.Errorf("wrong decimals '%v'", decimalsVal)
+	}
+	decimals := uint8(decimalsVal)
 	tokenCfg := &router.TokenConfig{
 		TokenID:           ctx.String(cTokenIDFlag.Name),
-		Decimals:          uint8(decimals),
+		Decimals:          decimals,
 		ContractAddress:   ctx.String(cContractAddressFlag.Name),
-		ContractVersion:   ctx.Float64(cContractVersionFlag.Name),
+		ContractVersion:   ctx.Uint64(cContractVersionFlag.Name),
 		MaximumSwap:       ctx.Float64(cMaximumSwapFlag.Name),
 		MinimumSwap:       ctx.Float64(cMinimumSwapFlag.Name),
 		BigValueThreshold: ctx.Float64(cBigValueThresholdFlag.Name),
@@ -248,7 +247,7 @@ func genTokenConfigData(ctx *cli.Context) error {
 		MaximumSwapFee:    ctx.Float64(cMaximumSwapFeeFlag.Name),
 		MinimumSwapFee:    ctx.Float64(cMinimumSwapFeeFlag.Name),
 	}
-	err := tokenCfg.CheckConfig()
+	err = tokenCfg.CheckConfig()
 	if err != nil {
 		return err
 	}
@@ -256,48 +255,22 @@ func genTokenConfigData(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("chainID is", chainID)
 	fmt.Println("token config struct is", string(jsdata))
-	jsdata, err = json.Marshal(tokenCfg)
-	if err != nil {
-		return err
-	}
-	fmt.Println("token config data is", common.ToHex(jsdata))
-	return nil
-}
-
-func decodeHex(ctx *cli.Context) error {
-	if ctx.NArg() != 1 {
-		_ = cli.ShowCommandHelp(ctx, "decodeHex")
-		fmt.Println()
-		return fmt.Errorf("miss argument of hex string")
-	}
-	hexStr := ctx.Args().Get(0)
-	if common.HasHexPrefix(hexStr) {
-		hexStr = hexStr[2:]
-	}
-	hexData, err := hex.DecodeString(hexStr)
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(hexData))
-	return nil
-}
-
-func packCallStrArray(ctx *cli.Context) error {
-	argsCount := ctx.NArg()
-	if argsCount < 1 {
-		_ = cli.ShowCommandHelp(ctx, "packCallStrArray")
-		fmt.Println()
-		return fmt.Errorf("miss argument of method name and args")
-	}
-	methodName := ctx.Args().Get(0)
-	args := make([]string, argsCount-1)
-	for i := 1; i < argsCount; i++ {
-		args[i-1] = ctx.Args().Get(i)
-	}
-	funcProto := fmt.Sprintf("%v(string[])", methodName)
-	funcHash := common.Keccak256Hash([]byte(funcProto))
-	input := router.PackDataWithFuncHash(funcHash[:4], args)
-	fmt.Println(common.ToHex(input))
+	funcHash := common.FromHex("0xbb14e9ff")
+	inputData := router.PackDataWithFuncHash(funcHash,
+		common.BytesToHash([]byte(tokenCfg.TokenID)),
+		chainID,
+		decimals,
+		common.HexToAddress(tokenCfg.ContractAddress),
+		tokenCfg.ContractVersion,
+		router.ToBits(tokenCfg.MaximumSwap, decimals),
+		router.ToBits(tokenCfg.MinimumSwap, decimals),
+		router.ToBits(tokenCfg.BigValueThreshold, decimals),
+		uint64(tokenCfg.SwapFeeRate*1000000),
+		router.ToBits(tokenCfg.MaximumSwapFee, decimals),
+		router.ToBits(tokenCfg.MinimumSwapFee, decimals),
+	)
+	fmt.Println("set token config input data is", common.ToHex(inputData))
 	return nil
 }

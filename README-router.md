@@ -29,7 +29,7 @@ The following is the most used functions, please ref. the abi for more info.
 
 call the following contract function:
 ```solidity
-setChainConfig(uint256 chainID, bytes data)
+setChainConfig(uint256 chainID, ChainConfig config)
 ```
 
 data can be generate by the following method:
@@ -59,7 +59,7 @@ chain config data is 0x7b22426c6f636b436861696e223a2266736e222c22436861696e49442
 
 call the following contract function:
 ```solidity
-setTokenConfig(string tokenID, uint256 chainID, address tokenAddr, bytes data)
+setTokenConfig(bytes32 tokenID, uint256 chainID, TokenConfig config)
 ```
 
 data can be generate by the following method:
@@ -84,23 +84,12 @@ token config struct is {
 token config data is 0x7b224944223a22616e79222c22446563696d616c73223a31382c22436f6e747261637441646472657373223a22307863323062356539326531636536336166366665353337343931663735633139303136656135666234222c22436f6e747261637456657273696f6e223a342c224d6178696d756d53776170223a313030303030302c224d696e696d756d53776170223a3130302c2242696756616c75655468726573686f6c64223a3130303030302c225377617046656552617465223a302e3030312c224d6178696d756d53776170466565223a31302c224d696e696d756d53776170466565223a317d
 ```
 
-### 4.3 set multichain tokens
+### 4.3 set mpc address's public key
 
 call the following contract function:
 ```solidity
-addMultichainToken(string tokenID, uint256 chainID, address token)
-addMultichainTokens(string tokenID, uint256[] chainIDs, address[] tokens)
+setMPCPubkey(address addr, string pubkey)
 ```
-
-### 4.4 set mpc address's public key
-
-call the following contract function:
-```solidity
-setMPCPubkey(address addr, bytes data)
-```
-
-data is the hex string of mpc address's public key
-
 
 ## 5. add local config file
 

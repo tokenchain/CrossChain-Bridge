@@ -36,7 +36,7 @@ type TokenConfig struct {
 	TokenID           string
 	Decimals          uint8
 	ContractAddress   string
-	ContractVersion   float64
+	ContractVersion   uint64
 	MaximumSwap       float64 // whole unit (eg. BTC, ETH, FSN), not Satoshi
 	MinimumSwap       float64 // whole unit
 	BigValueThreshold float64
@@ -152,11 +152,11 @@ func (c *TokenConfig) GetUnderlying() common.Address {
 }
 
 func (c *TokenConfig) calcAndStoreValue() {
-	c.maxSwap = toBits(c.MaximumSwap, c.Decimals)
-	c.minSwap = toBits(c.MinimumSwap, c.Decimals)
-	c.maxSwapFee = toBits(c.MaximumSwapFee, c.Decimals)
-	c.minSwapFee = toBits(c.MinimumSwapFee, c.Decimals)
-	c.bigValThreshhold = toBits(c.BigValueThreshold+0.0001, c.Decimals)
+	c.maxSwap = ToBits(c.MaximumSwap, c.Decimals)
+	c.minSwap = ToBits(c.MinimumSwap, c.Decimals)
+	c.maxSwapFee = ToBits(c.MaximumSwapFee, c.Decimals)
+	c.minSwapFee = ToBits(c.MinimumSwapFee, c.Decimals)
+	c.bigValThreshhold = ToBits(c.BigValueThreshold+0.0001, c.Decimals)
 }
 
 // VerifyMPCPubKey verify mpc address and public key is matching

@@ -200,6 +200,7 @@ func (b *Bridge) checkBalance(token, account string, amount *big.Int) (err error
 	return err
 }
 
-func toBits(value float64, decimals uint8) *big.Int {
+// ToBits call tokens.ToBits
+func ToBits(value float64, decimals uint8) *big.Int {
 	return tokens.ToBits(value, decimals)
 }
