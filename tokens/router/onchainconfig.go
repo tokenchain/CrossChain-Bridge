@@ -3,7 +3,6 @@ package router
 import (
 	"context"
 	"crypto/rand"
-	"encoding/json"
 	"math/big"
 	"sync/atomic"
 	"time"
@@ -97,19 +96,43 @@ func SubscribeRouterConfig(topics []ethcommon.Hash) {
 		ch := make(chan ethtypes.Log)
 		sub, err := cli.SubscribeFilterLogs(routerConfigCtx, fq, ch)
 		if err != nil {
-			log.Error("subscribe updateID failed", "index", i, "err", err)
+			log.Error("subscribe 'UpdateConfig' event failed", "index", i, "err", err)
 			continue
 		}
 		channels = append(channels, ch)
 		subscribes = append(subscribes, sub)
 	}
-	log.Info("subscribe updateID finished", "subscribes", len(subscribes))
+	log.Info("subscribe 'UpdateConfig' event finished", "subscribes", len(subscribes))
 }
 
-// --------------------- getter -----------------------------------
+func parseChainConfig(data []byte) (config *ChainConfig, err error) {
+	offset, overflow := common.GetUint64(data, 0, 32)
+	if overflow {
+		return nil, errParseDataError
+	}
+	if uint64(len(data)) < offset+12*32 {
+		return nil, errParseDataError
+	}
+	data = data[32:]
+	config = &ChainConfig{}
+	config.BlockChain, err = ParseStringInData(data, 0)
+	if err != nil {
+		return nil, errParseDataError
+	}
+	config.RouterContract = common.BytesToAddress(common.GetData(data, 32, 32)).String()
+	config.Confirmations = common.GetBigInt(data, 64, 32).Uint64()
+	config.InitialHeight = common.GetBigInt(data, 96, 32).Uint64()
+	config.WaitTimeToReplace = common.GetBigInt(data, 128, 32).Int64()
+	config.MaxReplaceCount = int(common.GetBigInt(data, 160, 32).Int64())
+	config.SwapDeadlineOffset = common.GetBigInt(data, 192, 32).Int64()
+	config.PlusGasPricePercentage = common.GetBigInt(data, 224, 32).Uint64()
+	config.MaxGasPriceFluctPercent = common.GetBigInt(data, 256, 32).Uint64()
+	config.DefaultGasLimit = common.GetBigInt(data, 288, 32).Uint64()
+	return config, nil
+}
 
 // GetChainConfig abi
-func GetChainConfig(chainID *big.Int) (chainCfg *ChainConfig, err error) {
+func GetChainConfig(chainID *big.Int) (*ChainConfig, error) {
 	funcHash := common.FromHex("0x19ed16dc")
 	data := make([]byte, 36)
 	copy(data[:4], funcHash)
@@ -118,52 +141,67 @@ func GetChainConfig(chainID *big.Int) (chainCfg *ChainConfig, err error) {
 	if err != nil {
 		return nil, err
 	}
-	hexData, err := ParseBytesInData(res, 0)
+	config, err := parseChainConfig(res)
 	if err != nil {
 		return nil, err
 	}
-	if len(hexData) == 0 {
-		return nil, nil
-	}
-	err = json.Unmarshal(hexData, &chainCfg)
-	if err != nil {
-		return nil, err
-	}
-	return chainCfg, nil
+	config.ChainID = chainID.String()
+	return config, nil
 }
 
-func getTokenConfig(funcHash []byte, chainID *big.Int, token string) (tokenCfg *TokenConfig, err error) {
+func parseTokenConfig(data []byte) (config *TokenConfig, err error) {
+	if uint64(len(data)) < 9*32 {
+		return nil, errParseDataError
+	}
+	decimals := uint8(common.GetBigInt(data, 0, 32).Uint64())
+	contractAddress := common.BytesToAddress(common.GetData(data, 32, 32)).String()
+	contractVersion := common.GetBigInt(data, 64, 32).Uint64()
+	maximumSwap := common.GetBigInt(data, 96, 32)
+	minimumSwap := common.GetBigInt(data, 128, 32)
+	bigValueThreshold := common.GetBigInt(data, 160, 32)
+	swapFeeRate := common.GetBigInt(data, 192, 32)
+	maximumSwapFee := common.GetBigInt(data, 224, 32)
+	minimumSwapFee := common.GetBigInt(data, 256, 32)
+	config = &TokenConfig{
+		Decimals:          decimals,
+		ContractAddress:   contractAddress,
+		ContractVersion:   contractVersion,
+		MaximumSwap:       FromBits(maximumSwap, decimals),
+		MinimumSwap:       FromBits(minimumSwap, decimals),
+		BigValueThreshold: FromBits(bigValueThreshold, decimals),
+		SwapFeeRate:       FromBits(swapFeeRate, 6),
+		MaximumSwapFee:    FromBits(maximumSwapFee, decimals),
+		MinimumSwapFee:    FromBits(minimumSwapFee, decimals),
+	}
+	return config, err
+}
+
+func getTokenConfig(funcHash []byte, chainID *big.Int, token string) (*TokenConfig, error) {
 	data := make([]byte, 68)
 	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes(chainID.Bytes(), 32))
-	copy(data[36:68], common.HexToAddress(token).Hash().Bytes())
+	copy(data[4:36], common.LeftPadBytes([]byte(token), 32))
+	copy(data[36:68], common.LeftPadBytes(chainID.Bytes(), 32))
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
 		return nil, err
 	}
-	hexData, err := ParseBytesInData(res, 0)
+	config, err := parseTokenConfig(res)
 	if err != nil {
 		return nil, err
 	}
-	if len(hexData) == 0 {
-		return nil, nil
-	}
-	err = json.Unmarshal(hexData, &tokenCfg)
-	if err != nil {
-		return nil, err
-	}
-	return tokenCfg, nil
+	config.TokenID = token
+	return config, nil
 }
 
 // GetTokenConfig abi
 func GetTokenConfig(chainID *big.Int, token string) (tokenCfg *TokenConfig, err error) {
-	funcHash := common.FromHex("0x6332aec6")
+	funcHash := common.FromHex("0xa5bc5953")
 	return getTokenConfig(funcHash, chainID, token)
 }
 
 // GetUserTokenConfig abi
 func GetUserTokenConfig(chainID *big.Int, token string) (tokenCfg *TokenConfig, err error) {
-	funcHash := common.FromHex("0x7ebcc5b1")
+	funcHash := common.FromHex("0xb329b08a")
 	return getTokenConfig(funcHash, chainID, token)
 }
 
@@ -185,48 +223,12 @@ func GetCustomConfig(chainID *big.Int, key string) (string, error) {
 	return ParseStringInData(res, 0)
 }
 
-// GetTokenIDOfToken abi
-func GetTokenIDOfToken(chainID *big.Int, token string) (tokenID string, err error) {
-	funcHash := common.FromHex("0x0e8257af")
-	data := make([]byte, 68)
-	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes(chainID.Bytes(), 32))
-	copy(data[36:68], common.HexToAddress(token).Hash().Bytes())
-	res, err := CallOnchainContract(data, "latest")
-	if err != nil {
-		return "", err
-	}
-	return ParseStringInData(res, 0)
-}
-
 // GetMPCPubkey abi
 func GetMPCPubkey(mpcAddress string) (pubkey string, err error) {
 	funcHash := common.FromHex("0x58bb97fb")
 	data := make([]byte, 36)
 	copy(data[:4], funcHash)
 	copy(data[4:36], common.HexToAddress(mpcAddress).Hash().Bytes())
-	res, err := CallOnchainContract(data, "latest")
-	if err != nil {
-		return "", err
-	}
-	return ParseStringInData(res, 0)
-}
-
-func getOneStrArgData(funcHash []byte, strArg string) []byte {
-	length := len(strArg)
-	padLength := (length + 31) / 32 * 32
-	data := make([]byte, 68+padLength)
-	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes([]byte{0x20}, 32))
-	copy(data[36:68], common.LeftPadBytes(big.NewInt(int64(length)).Bytes(), 32))
-	copy(data[68:], strArg)
-	return data
-}
-
-// GetMPCPubkey2 abi
-func GetMPCPubkey2(mpcAddress string) (pubkey string, err error) {
-	funcHash := common.FromHex("0xffc8fd7b")
-	data := getOneStrArgData(funcHash, mpcAddress)
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
 		return "", err
@@ -249,23 +251,15 @@ func IsChainIDExist(chainID *big.Int) (exist bool, err error) {
 
 // IsTokenIDExist abi
 func IsTokenIDExist(tokenID string) (exist bool, err error) {
-	funcHash := common.FromHex("0xaf611ca0")
-	data := getOneStrArgData(funcHash, tokenID)
+	funcHash := common.FromHex("0x97c9877f")
+	data := make([]byte, 36)
+	copy(data[:4], funcHash)
+	copy(data[4:36], common.LeftPadBytes([]byte(tokenID), 32))
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
 		return false, err
 	}
 	return common.GetBigInt(res, 0, 32).Sign() != 0, nil
-}
-
-// GetChainIDCount abi
-func GetChainIDCount() (count uint64, err error) {
-	funcHash := common.FromHex("0x7b9fb005")
-	res, err := CallOnchainContract(funcHash, "latest")
-	if err != nil {
-		return 0, err
-	}
-	return common.GetBigInt(res, 0, 32).Uint64(), nil
 }
 
 // GetAllChainIDs abi
@@ -278,43 +272,6 @@ func GetAllChainIDs() (chainIDs []*big.Int, err error) {
 	return ParseNumberSliceAsBigIntsInData(res, 0)
 }
 
-// GetChainIDAtIndex abi
-func GetChainIDAtIndex(index uint64) (chainID *big.Int, err error) {
-	funcHash := common.FromHex("0x0b1bb383")
-	data := make([]byte, 36)
-	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes(big.NewInt(int64(index)).Bytes(), 32))
-	res, err := CallOnchainContract(data, "latest")
-	if err != nil {
-		return nil, err
-	}
-	return common.GetBigInt(res, 0, 32), nil
-}
-
-// GetChainIDsInRange abi
-func GetChainIDsInRange(start, end uint64) (chainIDs []*big.Int, err error) {
-	funcHash := common.FromHex("0x60bb8b75")
-	data := make([]byte, 68)
-	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes(big.NewInt(int64(start)).Bytes(), 32))
-	copy(data[36:68], common.LeftPadBytes(big.NewInt(int64(end)).Bytes(), 32))
-	res, err := CallOnchainContract(data, "latest")
-	if err != nil {
-		return nil, err
-	}
-	return ParseNumberSliceAsBigIntsInData(res, 0)
-}
-
-// GetTokenIDCount abi
-func GetTokenIDCount() (count uint64, err error) {
-	funcHash := common.FromHex("0x9e1a1087")
-	res, err := CallOnchainContract(funcHash, "latest")
-	if err != nil {
-		return 0, err
-	}
-	return common.GetBigInt(res, 0, 32).Uint64(), nil
-}
-
 // GetAllTokenIDs abi
 func GetAllTokenIDs() (tokenIDs []string, err error) {
 	funcHash := common.FromHex("0x684a10b3")
@@ -322,47 +279,24 @@ func GetAllTokenIDs() (tokenIDs []string, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return ParseStringSliceInData(res, 0)
-}
-
-// GetTokenIDAtIndex abi
-func GetTokenIDAtIndex(index uint64) (tokenID string, err error) {
-	funcHash := common.FromHex("0x2915b073")
-	data := make([]byte, 36)
-	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes(big.NewInt(int64(index)).Bytes(), 32))
-	res, err := CallOnchainContract(data, "latest")
-	if err != nil {
-		return "", err
-	}
-	return ParseStringInData(res, 0)
-}
-
-// GetTokenIDsInRange abi
-func GetTokenIDsInRange(start, end uint64) (tokenIDs []string, err error) {
-	funcHash := common.FromHex("0x17394dac")
-	data := make([]byte, 68)
-	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes(big.NewInt(int64(start)).Bytes(), 32))
-	copy(data[36:68], common.LeftPadBytes(big.NewInt(int64(end)).Bytes(), 32))
-	res, err := CallOnchainContract(data, "latest")
+	bns, err := ParseNumberSliceAsBigIntsInData(res, 0)
 	if err != nil {
 		return nil, err
 	}
-	return ParseStringSliceInData(res, 0)
+	tokenIDs = make([]string, len(bns))
+	for i, bn := range bns {
+		tokenIDs[i] = string(bn.Bytes())
+	}
+	return tokenIDs, nil
 }
 
-// GetMultichainTokenOnChain abi
-func GetMultichainTokenOnChain(tokenID string, chainID *big.Int) (tokenAddr string, err error) {
-	funcHash := common.FromHex("0xe6729805")
-	length := len(tokenID)
-	padLength := (length + 31) / 32 * 32
-	data := make([]byte, 100+padLength)
+// GetMultichainToken abi
+func GetMultichainToken(tokenID string, chainID *big.Int) (tokenAddr string, err error) {
+	funcHash := common.FromHex("0xec85d336")
+	data := make([]byte, 68)
 	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes([]byte{0x40}, 32))
+	copy(data[4:36], common.LeftPadBytes([]byte(tokenID), 32))
 	copy(data[36:68], common.LeftPadBytes(chainID.Bytes(), 32))
-	copy(data[68:100], common.LeftPadBytes(big.NewInt(int64(length)).Bytes(), 32))
-	copy(data[100:], tokenID)
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
 		return "", err
@@ -370,40 +304,37 @@ func GetMultichainTokenOnChain(tokenID string, chainID *big.Int) (tokenAddr stri
 	return common.BigToAddress(common.GetBigInt(res, 0, 32)).String(), nil
 }
 
-// GetMultichainTokenCount abi
-func GetMultichainTokenCount(tokenID string) (count uint64, err error) {
-	funcHash := common.FromHex("0x628180fb")
-	data := getOneStrArgData(funcHash, tokenID)
-	res, err := CallOnchainContract(data, "latest")
-	if err != nil {
-		return 0, err
+func parseMultichainTokens(data []byte) (tokenAddrs []string, chainIDs []*big.Int, err error) {
+	offset, overflow := common.GetUint64(data, 0, 32)
+	if overflow {
+		return nil, nil, errParseDataError
 	}
-	return common.GetBigInt(res, 0, 32).Uint64(), nil
+	length, overflow := common.GetUint64(data, offset, 32)
+	if overflow {
+		return nil, nil, errParseDataError
+	}
+	if uint64(len(data)) < offset+32+length*64 {
+		return nil, nil, errParseDataError
+	}
+	tokenAddrs = make([]string, length)
+	chainIDs = make([]*big.Int, length)
+	data = data[offset+32:]
+	for i := uint64(0); i < length; i++ {
+		chainIDs[i] = common.GetBigInt(data, i*64, 32)
+		tokenAddrs[i] = common.BytesToAddress(common.GetData(data, i*64+32, 32)).String()
+	}
+	return tokenAddrs, chainIDs, nil
 }
 
-// GetMultichainTokensInRange abi
-func GetMultichainTokensInRange(tokenID string, start, end uint64) (chainIDs []*big.Int, tokens []string, err error) {
-	funcHash := common.FromHex("0x105cc82e")
-	length := len(tokenID)
-	padLength := (length + 31) / 32 * 32
-	data := make([]byte, 132+padLength)
+// GetAllMultichainTokens abi
+func GetAllMultichainTokens(tokenID string) (tokenAddrs []string, chainIDs []*big.Int, err error) {
+	funcHash := common.FromHex("231c77be")
+	data := make([]byte, 36)
 	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes([]byte{0x60}, 32))
-	copy(data[36:68], common.LeftPadBytes(big.NewInt(int64(start)).Bytes(), 32))
-	copy(data[68:100], common.LeftPadBytes(big.NewInt(int64(end)).Bytes(), 32))
-	copy(data[100:132], common.LeftPadBytes(big.NewInt(int64(length)).Bytes(), 32))
-	copy(data[132:], tokenID)
+	copy(data[4:36], common.LeftPadBytes([]byte(tokenID), 32))
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
 		return nil, nil, err
 	}
-	chainIDs, err = ParseNumberSliceAsBigIntsInData(res, 0)
-	if err != nil {
-		return nil, nil, err
-	}
-	tokens, err = ParseAddressSliceInData(res, 32)
-	if err != nil {
-		return nil, nil, err
-	}
-	return chainIDs, tokens, nil
+	return parseMultichainTokens(res)
 }

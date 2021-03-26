@@ -150,7 +150,7 @@ func (b *Bridge) initTokenConfig(tokenID string, chainID *big.Int) {
 	if tokenID == "" {
 		log.Fatal("empty token ID")
 	}
-	tokenAddr, err := GetMultichainTokenOnChain(tokenID, chainID)
+	tokenAddr, err := GetMultichainToken(tokenID, chainID)
 	if err != nil {
 		log.Fatal("get token address failed", "tokenID", tokenID, "chainID", chainID, "err", err)
 	}
