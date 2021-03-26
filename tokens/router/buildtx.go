@@ -104,7 +104,7 @@ func (b *Bridge) setDefaults(args *tokens.BuildTxArgs) (extra *tokens.EthExtraAr
 		}
 	}
 	if extra.Gas == nil {
-		esGasLimit, errf := b.EstimateGas(args.From, args.To, args.Value, *args.Input, "latest")
+		esGasLimit, errf := b.EstimateGas(args.From, args.To, args.Value, *args.Input)
 		if errf != nil {
 			log.Error("build routerswap tx estimate gas failed",
 				"swapID", args.SwapID, "from", args.From, "to", args.To,
