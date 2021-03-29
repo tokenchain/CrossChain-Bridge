@@ -158,9 +158,9 @@ func (b *Bridge) initTokenConfig(tokenID string, chainID *big.Int) {
 		log.Warnf(">>> [%5v] '%v' token address is empty", chainID, tokenID)
 		return
 	}
-	tokenCfg, err := GetTokenConfig(chainID, tokenAddr)
+	tokenCfg, err := GetTokenConfig(chainID, tokenID)
 	if err != nil {
-		log.Fatal("get token config failed", "chainID", chainID, "tokenAddr", tokenAddr, "err", err)
+		log.Fatal("get token config failed", "chainID", chainID, "tokenID", tokenID, "err", err)
 	}
 	if tokenCfg == nil {
 		log.Warn("token config not found", "tokenID", tokenID, "chainID", chainID, "tokenAddr", tokenAddr)
