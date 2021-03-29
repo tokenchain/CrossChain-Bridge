@@ -30,6 +30,13 @@ func (s *RouterSwapAPI) GetVersionInfo(r *http.Request, args *RPCNullArgs, resul
 	return nil
 }
 
+// GetIdentifier api
+func (s *RouterSwapAPI) GetIdentifier(r *http.Request, args *RPCNullArgs, result *string) error {
+	identifier := params.GetIdentifier()
+	*result = identifier
+	return nil
+}
+
 // RegisterRouterSwap api
 func (s *RouterSwapAPI) RegisterRouterSwap(r *http.Request, args *RouterSwapKeyArgs, result *swapapi.MapIntResult) error {
 	res, err := swapapi.RegisterRouterSwap(args.ChainID, args.TxID, args.LogIndex)

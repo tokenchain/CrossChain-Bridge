@@ -9,6 +9,8 @@
 [swap.RegisterRouterSwap](#swapregisterrouterswap)  
 [swap.GetRouterSwap](#swapgetrouterswap)  
 [swap.GetRouterSwapHistory](#swapgetrouterswaphistory)  
+[swap.GetVersionInfo](#swapgetversioninfo)  
+[swap.GetIdentifier](#swapgetidentifier)  
 
 ### swap.RegisterRouterSwap
 
@@ -58,6 +60,20 @@
 成功返回置换历史，失败返回错误。
 ```
 
+### swap.GetVersionInfo
+
+##### 返回值：
+```text
+返回版本号信息
+```
+
+### swap.GetIdentifier
+
+##### 返回值：
+```text
+返回惟一标识
+```
+
 ## RESTful API Reference
 
 ### POST /swap/register/{chainid}/{txid}?logindex=0
@@ -80,3 +96,9 @@
 
 其中 offset，limit 为可选参数，默认值分别为 0 和 20。
 如果 limit 为负数，表示按时间逆序排序后取结果。
+
+### GET /versioninfo
+获取版本号信息
+
+### GET /identifier
+获取惟一标识

@@ -31,6 +31,12 @@ func VersionInfoHandler(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, version, nil)
 }
 
+// IdentifierHandler handler
+func IdentifierHandler(w http.ResponseWriter, r *http.Request) {
+	identifier := params.GetIdentifier()
+	writeResponse(w, identifier, nil)
+}
+
 // ServerInfoHandler handler
 func ServerInfoHandler(w http.ResponseWriter, r *http.Request) {
 	res, err := swapapi.GetServerInfo()
