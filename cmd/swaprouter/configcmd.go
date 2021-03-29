@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/anyswap/CrossChain-Bridge/cmd/utils"
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/tokens/router"
 	"github.com/urfave/cli/v2"
@@ -15,7 +14,6 @@ var (
 	configCommand = &cli.Command{
 		Name:  "config",
 		Usage: "config router swap",
-		Flags: utils.CommonLogFlags,
 		Description: `
 config router swap
 `,
@@ -62,7 +60,131 @@ generate ChainConfig json marshal data
 generate TokenConfig json marshal data
 `,
 			},
+			{
+				Name:   "getAllChainIDs",
+				Usage:  "get all chainIDs",
+				Action: getAllChainIDs,
+				Flags: []cli.Flag{
+					onchainContractFlag,
+					gatewaysFlag,
+				},
+			},
+			{
+				Name:   "getAllTokenIDs",
+				Usage:  "get all tokenIDs",
+				Action: getAllTokenIDs,
+				Flags: []cli.Flag{
+					onchainContractFlag,
+					gatewaysFlag,
+				},
+			},
+			{
+				Name:      "isChainIDExist",
+				Usage:     "is chainID exist",
+				Action:    isChainIDExist,
+				ArgsUsage: "<chainID>",
+				Flags: []cli.Flag{
+					onchainContractFlag,
+					gatewaysFlag,
+				},
+			},
+			{
+				Name:      "isTokenIDExist",
+				Usage:     "is tokenID exist",
+				Action:    isTokenIDExist,
+				ArgsUsage: "<tokenID>",
+				Flags: []cli.Flag{
+					onchainContractFlag,
+					gatewaysFlag,
+				},
+			},
+			{
+				Name:      "getTokenID",
+				Usage:     "get tokenID of string and byte32 type",
+				Action:    getTokenID,
+				ArgsUsage: "<string or hex>",
+			},
+			{
+				Name:      "getChainConfig",
+				Usage:     "get chain config",
+				Action:    getChainConfig,
+				ArgsUsage: "<chainID>",
+				Flags: []cli.Flag{
+					onchainContractFlag,
+					gatewaysFlag,
+				},
+			},
+			{
+				Name:      "getTokenConfig",
+				Usage:     "get token config",
+				Action:    getTokenConfig,
+				ArgsUsage: "<tokenID> <chainID>",
+				Flags: []cli.Flag{
+					onchainContractFlag,
+					gatewaysFlag,
+				},
+			},
+			{
+				Name:      "getUserTokenConfig",
+				Usage:     "get user token config",
+				Action:    getUserTokenConfig,
+				ArgsUsage: "<tokenID> <chainID>",
+				Flags: []cli.Flag{
+					onchainContractFlag,
+					gatewaysFlag,
+				},
+			},
+			{
+				Name:      "getCustomConfig",
+				Usage:     "get custom config",
+				Action:    getCustomConfig,
+				ArgsUsage: "<chainID> <key>",
+				Flags: []cli.Flag{
+					onchainContractFlag,
+					gatewaysFlag,
+				},
+			},
+			{
+				Name:      "getAllMultichainTokens",
+				Usage:     "get all multichain tokens",
+				Action:    getAllMultichainTokens,
+				ArgsUsage: "<tokenID>",
+				Flags: []cli.Flag{
+					onchainContractFlag,
+					gatewaysFlag,
+				},
+			},
+			{
+				Name:      "getMultichainToken",
+				Usage:     "get multichain token",
+				Action:    getMultichainToken,
+				ArgsUsage: "<tokenID> <chainID>",
+				Flags: []cli.Flag{
+					onchainContractFlag,
+					gatewaysFlag,
+				},
+			},
+			{
+				Name:      "getMPCPubkey",
+				Usage:     "get mpc address public key",
+				Action:    getMPCPubkey,
+				ArgsUsage: "<mpcAddress>",
+				Flags: []cli.Flag{
+					onchainContractFlag,
+					gatewaysFlag,
+				},
+			},
 		},
+	}
+
+	onchainContractFlag = &cli.StringFlag{
+		Name:  "contract",
+		Usage: "onchain contract address",
+	}
+
+	gatewaysFlag = &cli.StringSliceFlag{
+		Name:  "gateway",
+		Usage: "gateway URL to connect",
 	}
 
 	// --------- chain config -------------------
@@ -272,5 +394,239 @@ func genSetTokenConfigData(ctx *cli.Context) error {
 		router.ToBits(tokenCfg.MinimumSwapFee, decimals),
 	)
 	fmt.Println("set token config input data is", common.ToHex(inputData))
+	return nil
+}
+
+func getTokenID(ctx *cli.Context) error {
+	if ctx.NArg() < 1 {
+		return fmt.Errorf("miss required position argument")
+	}
+	inputStr := ctx.Args().Get(0)
+	if common.HasHexPrefix(inputStr) {
+		fmt.Println("string type:", string(common.FromHex(inputStr)))
+		fmt.Println("byte32 type:", common.HexToHash(inputStr).String())
+	} else {
+		fmt.Println("string type:", inputStr)
+		fmt.Println("byte32 type:", common.BytesToHash([]byte(inputStr)).String())
+	}
+	return nil
+}
+
+func getChainConfig(ctx *cli.Context) error {
+	if ctx.NArg() < 1 {
+		return fmt.Errorf("miss required position argument")
+	}
+	chainIDStr := ctx.Args().Get(0)
+	chainID, err := common.GetBigIntFromStr(chainIDStr)
+	if err != nil {
+		return fmt.Errorf("wrong chainID '%v'", chainIDStr)
+	}
+	router.InitRouterConfigClientsWithArgs(
+		ctx.String(onchainContractFlag.Name),
+		ctx.StringSlice(gatewaysFlag.Name),
+	)
+	chainCfg, err := router.GetChainConfig(chainID)
+	if err != nil {
+		return err
+	}
+	jsdata, err := json.MarshalIndent(chainCfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println("chain config is", string(jsdata))
+	return nil
+}
+
+func getArgsOfTokenAndChainID(ctx *cli.Context) (tokenID string, chainID *big.Int, err error) {
+	if ctx.NArg() < 2 {
+		return "", nil, fmt.Errorf("miss required position argument")
+	}
+	tokenID = ctx.Args().Get(0)
+	chainIDStr := ctx.Args().Get(1)
+	chainID, err = common.GetBigIntFromStr(chainIDStr)
+	if err != nil {
+		return "", nil, fmt.Errorf("wrong chainID '%v'", chainIDStr)
+	}
+	if common.HasHexPrefix(tokenID) {
+		tokenID = string(common.FromHex(tokenID))
+	}
+	return tokenID, chainID, err
+}
+
+func getTokenConfigImpl(ctx *cli.Context, isUserConfig bool) error {
+	tokenID, chainID, err := getArgsOfTokenAndChainID(ctx)
+	if err != nil {
+		return err
+	}
+	router.InitRouterConfigClientsWithArgs(
+		ctx.String(onchainContractFlag.Name),
+		ctx.StringSlice(gatewaysFlag.Name),
+	)
+	var tokenCfg *router.TokenConfig
+	if isUserConfig {
+		tokenCfg, err = router.GetUserTokenConfig(chainID, tokenID)
+	} else {
+		tokenCfg, err = router.GetTokenConfig(chainID, tokenID)
+	}
+	if err != nil {
+		return err
+	}
+	jsdata, err := json.MarshalIndent(tokenCfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println("token config is", string(jsdata))
+	return nil
+}
+
+func getTokenConfig(ctx *cli.Context) error {
+	return getTokenConfigImpl(ctx, false)
+}
+
+func getUserTokenConfig(ctx *cli.Context) error {
+	return getTokenConfigImpl(ctx, true)
+}
+
+func getCustomConfig(ctx *cli.Context) error {
+	if ctx.NArg() < 2 {
+		return fmt.Errorf("miss required position argument")
+	}
+	chainIDStr := ctx.Args().Get(0)
+	key := ctx.Args().Get(1)
+	chainID, err := common.GetBigIntFromStr(chainIDStr)
+	if err != nil {
+		return fmt.Errorf("wrong chainID '%v'", chainIDStr)
+	}
+	router.InitRouterConfigClientsWithArgs(
+		ctx.String(onchainContractFlag.Name),
+		ctx.StringSlice(gatewaysFlag.Name),
+	)
+	data, err := router.GetCustomConfig(chainID, key)
+	if err != nil {
+		return err
+	}
+	fmt.Println(data)
+	return nil
+}
+
+func getMPCPubkey(ctx *cli.Context) error {
+	if ctx.NArg() < 1 {
+		return fmt.Errorf("miss required position argument")
+	}
+	mpcAddr := ctx.Args().Get(0)
+	router.InitRouterConfigClientsWithArgs(
+		ctx.String(onchainContractFlag.Name),
+		ctx.StringSlice(gatewaysFlag.Name),
+	)
+	pubkey, err := router.GetMPCPubkey(mpcAddr)
+	if err != nil {
+		return err
+	}
+	fmt.Println(pubkey)
+	return nil
+}
+
+func getAllMultichainTokens(ctx *cli.Context) error {
+	if ctx.NArg() < 1 {
+		return fmt.Errorf("miss required position argument")
+	}
+	tokenIDStr := ctx.Args().Get(0)
+	router.InitRouterConfigClientsWithArgs(
+		ctx.String(onchainContractFlag.Name),
+		ctx.StringSlice(gatewaysFlag.Name),
+	)
+	mcTokens, err := router.GetAllMultichainTokens(tokenIDStr)
+	if err != nil {
+		return err
+	}
+	jsdata, err := json.MarshalIndent(mcTokens, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println("token config is", string(jsdata))
+	return nil
+}
+
+func getMultichainToken(ctx *cli.Context) error {
+	tokenID, chainID, err := getArgsOfTokenAndChainID(ctx)
+	if err != nil {
+		return err
+	}
+	router.InitRouterConfigClientsWithArgs(
+		ctx.String(onchainContractFlag.Name),
+		ctx.StringSlice(gatewaysFlag.Name),
+	)
+	mcToken, err := router.GetMultichainToken(tokenID, chainID)
+	if err != nil {
+		return err
+	}
+	fmt.Println(mcToken)
+	return nil
+}
+
+func getAllChainIDs(ctx *cli.Context) error {
+	router.InitRouterConfigClientsWithArgs(
+		ctx.String(onchainContractFlag.Name),
+		ctx.StringSlice(gatewaysFlag.Name),
+	)
+	chainIDs, err := router.GetAllChainIDs()
+	if err != nil {
+		return err
+	}
+	fmt.Println(chainIDs)
+	return nil
+}
+
+func getAllTokenIDs(ctx *cli.Context) error {
+	router.InitRouterConfigClientsWithArgs(
+		ctx.String(onchainContractFlag.Name),
+		ctx.StringSlice(gatewaysFlag.Name),
+	)
+	tokenIDs, err := router.GetAllTokenIDs()
+	if err != nil {
+		return err
+	}
+	fmt.Println(tokenIDs)
+	return nil
+}
+
+func isChainIDExist(ctx *cli.Context) error {
+	if ctx.NArg() < 1 {
+		return fmt.Errorf("miss required position argument")
+	}
+	chainIDStr := ctx.Args().Get(0)
+	chainID, err := common.GetBigIntFromStr(chainIDStr)
+	if err != nil {
+		return fmt.Errorf("wrong chainID '%v'", chainIDStr)
+	}
+	router.InitRouterConfigClientsWithArgs(
+		ctx.String(onchainContractFlag.Name),
+		ctx.StringSlice(gatewaysFlag.Name),
+	)
+	exist, err := router.IsChainIDExist(chainID)
+	if err != nil {
+		return err
+	}
+	fmt.Println(exist)
+	return nil
+}
+
+func isTokenIDExist(ctx *cli.Context) error {
+	if ctx.NArg() < 1 {
+		return fmt.Errorf("miss required position argument")
+	}
+	tokenID := ctx.Args().Get(0)
+	if common.HasHexPrefix(tokenID) {
+		tokenID = string(common.FromHex(tokenID))
+	}
+	router.InitRouterConfigClientsWithArgs(
+		ctx.String(onchainContractFlag.Name),
+		ctx.StringSlice(gatewaysFlag.Name),
+	)
+	exist, err := router.IsTokenIDExist(tokenID)
+	if err != nil {
+		return err
+	}
+	fmt.Println(exist)
 	return nil
 }

@@ -33,11 +33,16 @@ var (
 
 // InitRouterConfigClients init router config clients
 func InitRouterConfigClients() {
-	var err error
 	onchainCfg := params.GetRouterConfig().Onchain
-	routerConfigContract = ethcommon.HexToAddress(onchainCfg.Contract)
-	routerConfigClients = make([]*ethclient.Client, len(onchainCfg.APIAddress))
-	for i, gateway := range onchainCfg.APIAddress {
+	InitRouterConfigClientsWithArgs(onchainCfg.Contract, onchainCfg.APIAddress)
+}
+
+// InitRouterConfigClientsWithArgs init standalone
+func InitRouterConfigClientsWithArgs(configContract string, gateways []string) {
+	var err error
+	routerConfigContract = ethcommon.HexToAddress(configContract)
+	routerConfigClients = make([]*ethclient.Client, len(gateways))
+	for i, gateway := range gateways {
 		routerConfigClients[i], err = ethclient.Dial(gateway)
 		if err != nil {
 			log.Fatal("init router config clients failed", "gateway", gateway, "err", err)
@@ -304,37 +309,42 @@ func GetMultichainToken(tokenID string, chainID *big.Int) (tokenAddr string, err
 	return common.BigToAddress(common.GetBigInt(res, 0, 32)).String(), nil
 }
 
-func parseMultichainTokens(data []byte) (tokenAddrs []string, chainIDs []*big.Int, err error) {
+// MultichainToken struct
+type MultichainToken struct {
+	ChainID      *big.Int
+	TokenAddress string
+}
+
+func parseMultichainTokens(data []byte) (mcTokens []MultichainToken, err error) {
 	offset, overflow := common.GetUint64(data, 0, 32)
 	if overflow {
-		return nil, nil, errParseDataError
+		return nil, errParseDataError
 	}
 	length, overflow := common.GetUint64(data, offset, 32)
 	if overflow {
-		return nil, nil, errParseDataError
+		return nil, errParseDataError
 	}
 	if uint64(len(data)) < offset+32+length*64 {
-		return nil, nil, errParseDataError
+		return nil, errParseDataError
 	}
-	tokenAddrs = make([]string, length)
-	chainIDs = make([]*big.Int, length)
+	mcTokens = make([]MultichainToken, length)
 	data = data[offset+32:]
 	for i := uint64(0); i < length; i++ {
-		chainIDs[i] = common.GetBigInt(data, i*64, 32)
-		tokenAddrs[i] = common.BytesToAddress(common.GetData(data, i*64+32, 32)).String()
+		mcTokens[i].ChainID = common.GetBigInt(data, i*64, 32)
+		mcTokens[i].TokenAddress = common.BytesToAddress(common.GetData(data, i*64+32, 32)).String()
 	}
-	return tokenAddrs, chainIDs, nil
+	return mcTokens, nil
 }
 
 // GetAllMultichainTokens abi
-func GetAllMultichainTokens(tokenID string) (tokenAddrs []string, chainIDs []*big.Int, err error) {
+func GetAllMultichainTokens(tokenID string) ([]MultichainToken, error) {
 	funcHash := common.FromHex("231c77be")
 	data := make([]byte, 36)
 	copy(data[:4], funcHash)
 	copy(data[4:36], common.LeftPadBytes([]byte(tokenID), 32))
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	return parseMultichainTokens(res)
 }
