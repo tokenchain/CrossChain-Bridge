@@ -3,6 +3,7 @@ package router
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"math/big"
 	"sync/atomic"
 	"time"
@@ -115,7 +116,7 @@ func parseChainConfig(data []byte) (config *ChainConfig, err error) {
 	if overflow {
 		return nil, errParseDataError
 	}
-	if uint64(len(data)) < offset+12*32 {
+	if uint64(len(data)) < offset+11*32 {
 		return nil, errParseDataError
 	}
 	data = data[32:]
@@ -138,10 +139,11 @@ func parseChainConfig(data []byte) (config *ChainConfig, err error) {
 
 // GetChainConfig abi
 func GetChainConfig(chainID *big.Int) (*ChainConfig, error) {
+	if chainID == nil || chainID.Sign() == 0 {
+		return nil, errors.New("chainID is zero")
+	}
 	funcHash := common.FromHex("0x19ed16dc")
-	data := make([]byte, 36)
-	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes(chainID.Bytes(), 32))
+	data := PackDataWithFuncHash(funcHash, chainID)
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
 		return nil, err
@@ -182,10 +184,7 @@ func parseTokenConfig(data []byte) (config *TokenConfig, err error) {
 }
 
 func getTokenConfig(funcHash []byte, chainID *big.Int, token string) (*TokenConfig, error) {
-	data := make([]byte, 68)
-	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes([]byte(token), 32))
-	copy(data[36:68], common.LeftPadBytes(chainID.Bytes(), 32))
+	data := PackDataWithFuncHash(funcHash, token, chainID)
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
 		return nil, err
@@ -200,27 +199,20 @@ func getTokenConfig(funcHash []byte, chainID *big.Int, token string) (*TokenConf
 
 // GetTokenConfig abi
 func GetTokenConfig(chainID *big.Int, token string) (tokenCfg *TokenConfig, err error) {
-	funcHash := common.FromHex("0xa5bc5953")
+	funcHash := common.FromHex("0x459511d1")
 	return getTokenConfig(funcHash, chainID, token)
 }
 
 // GetUserTokenConfig abi
 func GetUserTokenConfig(chainID *big.Int, token string) (tokenCfg *TokenConfig, err error) {
-	funcHash := common.FromHex("0xb329b08a")
+	funcHash := common.FromHex("0x2879196f")
 	return getTokenConfig(funcHash, chainID, token)
 }
 
 // GetCustomConfig abi
 func GetCustomConfig(chainID *big.Int, key string) (string, error) {
 	funcHash := common.FromHex("0x61387d61")
-	length := len(key)
-	padLength := (length + 31) / 32 * 32
-	data := make([]byte, 100+padLength)
-	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes(chainID.Bytes(), 32))
-	copy(data[36:68], common.LeftPadBytes([]byte{0x40}, 32))
-	copy(data[68:100], common.LeftPadBytes(big.NewInt(int64(length)).Bytes(), 32))
-	copy(data[100:], key)
+	data := PackDataWithFuncHash(funcHash, chainID, key)
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
 		return "", err
@@ -231,9 +223,7 @@ func GetCustomConfig(chainID *big.Int, key string) (string, error) {
 // GetMPCPubkey abi
 func GetMPCPubkey(mpcAddress string) (pubkey string, err error) {
 	funcHash := common.FromHex("0x58bb97fb")
-	data := make([]byte, 36)
-	copy(data[:4], funcHash)
-	copy(data[4:36], common.HexToAddress(mpcAddress).Hash().Bytes())
+	data := PackDataWithFuncHash(funcHash, common.HexToAddress(mpcAddress))
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
 		return "", err
@@ -244,9 +234,7 @@ func GetMPCPubkey(mpcAddress string) (pubkey string, err error) {
 // IsChainIDExist abi
 func IsChainIDExist(chainID *big.Int) (exist bool, err error) {
 	funcHash := common.FromHex("0xfd15ea70")
-	data := make([]byte, 36)
-	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes(chainID.Bytes(), 32))
+	data := PackDataWithFuncHash(funcHash, chainID)
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
 		return false, err
@@ -256,10 +244,8 @@ func IsChainIDExist(chainID *big.Int) (exist bool, err error) {
 
 // IsTokenIDExist abi
 func IsTokenIDExist(tokenID string) (exist bool, err error) {
-	funcHash := common.FromHex("0x97c9877f")
-	data := make([]byte, 36)
-	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes([]byte(tokenID), 32))
+	funcHash := common.FromHex("0xaf611ca0")
+	data := PackDataWithFuncHash(funcHash, tokenID)
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
 		return false, err
@@ -284,24 +270,13 @@ func GetAllTokenIDs() (tokenIDs []string, err error) {
 	if err != nil {
 		return nil, err
 	}
-	bns, err := ParseNumberSliceAsBigIntsInData(res, 0)
-	if err != nil {
-		return nil, err
-	}
-	tokenIDs = make([]string, len(bns))
-	for i, bn := range bns {
-		tokenIDs[i] = string(bn.Bytes())
-	}
-	return tokenIDs, nil
+	return ParseStringSliceInData(res, 0)
 }
 
 // GetMultichainToken abi
 func GetMultichainToken(tokenID string, chainID *big.Int) (tokenAddr string, err error) {
-	funcHash := common.FromHex("0xec85d336")
-	data := make([]byte, 68)
-	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes([]byte(tokenID), 32))
-	copy(data[36:68], common.LeftPadBytes(chainID.Bytes(), 32))
+	funcHash := common.FromHex("0xb735ab5a")
+	data := PackDataWithFuncHash(funcHash, tokenID, chainID)
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
 		return "", err
@@ -338,10 +313,8 @@ func parseMultichainTokens(data []byte) (mcTokens []MultichainToken, err error) 
 
 // GetAllMultichainTokens abi
 func GetAllMultichainTokens(tokenID string) ([]MultichainToken, error) {
-	funcHash := common.FromHex("231c77be")
-	data := make([]byte, 36)
-	copy(data[:4], funcHash)
-	copy(data[4:36], common.LeftPadBytes([]byte(tokenID), 32))
+	funcHash := common.FromHex("0x8fcb62a3")
+	data := PackDataWithFuncHash(funcHash, tokenID)
 	res, err := CallOnchainContract(data, "latest")
 	if err != nil {
 		return nil, err

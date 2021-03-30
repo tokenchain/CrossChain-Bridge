@@ -99,12 +99,6 @@ generate TokenConfig json marshal data
 				},
 			},
 			{
-				Name:      "getTokenID",
-				Usage:     "get tokenID of string and byte32 type",
-				Action:    getTokenID,
-				ArgsUsage: "<string or hex>",
-			},
-			{
 				Name:      "getChainConfig",
 				Usage:     "get chain config",
 				Action:    getChainConfig,
@@ -379,9 +373,9 @@ func genSetTokenConfigData(ctx *cli.Context) error {
 	}
 	fmt.Println("chainID is", chainID)
 	fmt.Println("token config struct is", string(jsdata))
-	funcHash := common.FromHex("0xbb14e9ff")
+	funcHash := common.FromHex("0x69bda9eb")
 	inputData := router.PackDataWithFuncHash(funcHash,
-		common.BytesToHash([]byte(tokenCfg.TokenID)),
+		tokenCfg.TokenID,
 		chainID,
 		decimals,
 		common.HexToAddress(tokenCfg.ContractAddress),
@@ -397,29 +391,22 @@ func genSetTokenConfigData(ctx *cli.Context) error {
 	return nil
 }
 
-func getTokenID(ctx *cli.Context) error {
-	if ctx.NArg() < 1 {
-		return fmt.Errorf("miss required position argument")
+func getChainIDArgument(ctx *cli.Context, pos int) (chainID *big.Int, err error) {
+	chainIDStr := ctx.Args().Get(pos)
+	chainID, err = common.GetBigIntFromStr(chainIDStr)
+	if err != nil {
+		return nil, fmt.Errorf("wrong chainID '%v'", chainIDStr)
 	}
-	inputStr := ctx.Args().Get(0)
-	if common.HasHexPrefix(inputStr) {
-		fmt.Println("string type:", string(common.FromHex(inputStr)))
-		fmt.Println("byte32 type:", common.HexToHash(inputStr).String())
-	} else {
-		fmt.Println("string type:", inputStr)
-		fmt.Println("byte32 type:", common.BytesToHash([]byte(inputStr)).String())
-	}
-	return nil
+	return chainID, nil
 }
 
 func getChainConfig(ctx *cli.Context) error {
 	if ctx.NArg() < 1 {
 		return fmt.Errorf("miss required position argument")
 	}
-	chainIDStr := ctx.Args().Get(0)
-	chainID, err := common.GetBigIntFromStr(chainIDStr)
+	chainID, err := getChainIDArgument(ctx, 0)
 	if err != nil {
-		return fmt.Errorf("wrong chainID '%v'", chainIDStr)
+		return err
 	}
 	router.InitRouterConfigClientsWithArgs(
 		ctx.String(onchainContractFlag.Name),
@@ -437,24 +424,13 @@ func getChainConfig(ctx *cli.Context) error {
 	return nil
 }
 
-func getArgsOfTokenAndChainID(ctx *cli.Context) (tokenID string, chainID *big.Int, err error) {
-	if ctx.NArg() < 2 {
-		return "", nil, fmt.Errorf("miss required position argument")
-	}
-	tokenID = ctx.Args().Get(0)
-	chainIDStr := ctx.Args().Get(1)
-	chainID, err = common.GetBigIntFromStr(chainIDStr)
-	if err != nil {
-		return "", nil, fmt.Errorf("wrong chainID '%v'", chainIDStr)
-	}
-	if common.HasHexPrefix(tokenID) {
-		tokenID = string(common.FromHex(tokenID))
-	}
-	return tokenID, chainID, err
-}
-
 func getTokenConfigImpl(ctx *cli.Context, isUserConfig bool) error {
-	tokenID, chainID, err := getArgsOfTokenAndChainID(ctx)
+	if ctx.NArg() < 2 {
+		return fmt.Errorf("miss required position argument")
+	}
+	tokenID := ctx.Args().Get(0)
+	fmt.Printf("tokenID is %v, hex text is %v\n", tokenID, common.ToHex([]byte(tokenID)))
+	chainID, err := getChainIDArgument(ctx, 1)
 	if err != nil {
 		return err
 	}
@@ -491,12 +467,11 @@ func getCustomConfig(ctx *cli.Context) error {
 	if ctx.NArg() < 2 {
 		return fmt.Errorf("miss required position argument")
 	}
-	chainIDStr := ctx.Args().Get(0)
-	key := ctx.Args().Get(1)
-	chainID, err := common.GetBigIntFromStr(chainIDStr)
+	chainID, err := getChainIDArgument(ctx, 0)
 	if err != nil {
-		return fmt.Errorf("wrong chainID '%v'", chainIDStr)
+		return err
 	}
+	key := ctx.Args().Get(1)
 	router.InitRouterConfigClientsWithArgs(
 		ctx.String(onchainContractFlag.Name),
 		ctx.StringSlice(gatewaysFlag.Name),
@@ -548,7 +523,11 @@ func getAllMultichainTokens(ctx *cli.Context) error {
 }
 
 func getMultichainToken(ctx *cli.Context) error {
-	tokenID, chainID, err := getArgsOfTokenAndChainID(ctx)
+	if ctx.NArg() < 2 {
+		return fmt.Errorf("miss required position argument")
+	}
+	tokenID := ctx.Args().Get(0)
+	chainID, err := getChainIDArgument(ctx, 1)
 	if err != nil {
 		return err
 	}
@@ -594,10 +573,9 @@ func isChainIDExist(ctx *cli.Context) error {
 	if ctx.NArg() < 1 {
 		return fmt.Errorf("miss required position argument")
 	}
-	chainIDStr := ctx.Args().Get(0)
-	chainID, err := common.GetBigIntFromStr(chainIDStr)
+	chainID, err := getChainIDArgument(ctx, 0)
 	if err != nil {
-		return fmt.Errorf("wrong chainID '%v'", chainIDStr)
+		return err
 	}
 	router.InitRouterConfigClientsWithArgs(
 		ctx.String(onchainContractFlag.Name),
