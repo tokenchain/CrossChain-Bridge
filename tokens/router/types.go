@@ -33,24 +33,19 @@ type ChainConfig struct {
 
 // TokenConfig struct
 type TokenConfig struct {
-	TokenID           string
-	Decimals          uint8
-	ContractAddress   string
-	ContractVersion   uint64
-	MaximumSwap       float64 // whole unit (eg. BTC, ETH, FSN), not Satoshi
-	MinimumSwap       float64 // whole unit
-	BigValueThreshold float64
-	SwapFeeRate       float64
-	MaximumSwapFee    float64
-	MinimumSwapFee    float64
+	TokenID               string
+	Decimals              uint8
+	ContractAddress       string
+	ContractVersion       uint64
+	MaximumSwap           *big.Int
+	MinimumSwap           *big.Int
+	BigValueThreshold     *big.Int
+	SwapFeeRatePerMillion uint64
+	MaximumSwapFee        *big.Int
+	MinimumSwapFee        *big.Int
 
 	// calced value
-	maxSwap          *big.Int
-	minSwap          *big.Int
-	maxSwapFee       *big.Int
-	minSwapFee       *big.Int
-	bigValThreshhold *big.Int
-	underlying       common.Address
+	underlying common.Address
 }
 
 // GatewayConfig struct
@@ -106,57 +101,42 @@ func (c *TokenConfig) CheckConfig() error {
 	if c.ContractAddress == "" {
 		return errors.New("token must config 'ContractAddress'")
 	}
-	if c.MaximumSwap <= 0 {
+	if c.MaximumSwap.Sign() <= 0 {
 		return errors.New("token must config 'MaximumSwap' (positive)")
 	}
-	if c.MinimumSwap <= 0 {
+	if c.MinimumSwap.Sign() <= 0 {
 		return errors.New("token must config 'MinimumSwap' (positive)")
 	}
-	if c.MinimumSwap > c.MaximumSwap {
+	if c.MinimumSwap.Cmp(c.MaximumSwap) > 0 {
 		return errors.New("wrong token config, MinimumSwap > MaximumSwap")
 	}
-	if c.BigValueThreshold <= 0 {
+	if c.BigValueThreshold.Sign() <= 0 {
 		return errors.New("token must config 'BigValueThreshold' (positive)")
 	}
-	if c.SwapFeeRate <= 0 || c.SwapFeeRate >= 1 {
-		return errors.New("token must config 'SwapFeeRate' (in range (0,1))")
+	if c.SwapFeeRatePerMillion >= 1000000 {
+		return errors.New("token must config 'SwapFeeRatePerMillion' (< 1000000)")
 	}
-	if c.MaximumSwapFee < 0 {
+	if c.MaximumSwapFee.Sign() < 0 {
 		return errors.New("token must config 'MaximumSwapFee' (non-negative)")
 	}
-	if c.MinimumSwapFee < 0 {
+	if c.MinimumSwapFee.Sign() < 0 {
 		return errors.New("token must config 'MinimumSwapFee' (non-negative)")
 	}
-	if c.MinimumSwapFee > c.MaximumSwapFee {
+	if c.MinimumSwapFee.Cmp(c.MaximumSwapFee) > 0 {
 		return errors.New("wrong token config, MinimumSwapFee > MaximumSwapFee")
 	}
-	if c.MinimumSwap < c.MinimumSwapFee {
+	if c.MinimumSwap.Cmp(c.MinimumSwapFee) < 0 {
 		return errors.New("wrong token config, MinimumSwap < MinimumSwapFee")
 	}
-	if c.SwapFeeRate == 0.0 && c.MinimumSwapFee > 0.0 {
-		return errors.New("wrong token config, MinimumSwapFee should be 0 if SwapFeeRate is 0")
+	if c.SwapFeeRatePerMillion == 0 && c.MinimumSwapFee.Sign() > 0.0 {
+		return errors.New("wrong token config, MinimumSwapFee should be 0 if SwapFeeRatePerMillion is 0")
 	}
-
-	c.calcAndStoreValue()
 	return nil
-}
-
-// GetBigValueThreshold get big vaule threshold
-func (c *TokenConfig) GetBigValueThreshold() *big.Int {
-	return c.bigValThreshhold
 }
 
 // GetUnderlying get underlying
 func (c *TokenConfig) GetUnderlying() common.Address {
 	return c.underlying
-}
-
-func (c *TokenConfig) calcAndStoreValue() {
-	c.maxSwap = ToBits(c.MaximumSwap, c.Decimals)
-	c.minSwap = ToBits(c.MinimumSwap, c.Decimals)
-	c.maxSwapFee = ToBits(c.MaximumSwapFee, c.Decimals)
-	c.minSwapFee = ToBits(c.MinimumSwapFee, c.Decimals)
-	c.bigValThreshhold = ToBits(c.BigValueThreshold+0.0001, c.Decimals)
 }
 
 // VerifyMPCPubKey verify mpc address and public key is matching

@@ -166,19 +166,19 @@ func parseTokenConfig(data []byte) (config *TokenConfig, err error) {
 	maximumSwap := common.GetBigInt(data, 96, 32)
 	minimumSwap := common.GetBigInt(data, 128, 32)
 	bigValueThreshold := common.GetBigInt(data, 160, 32)
-	swapFeeRate := common.GetBigInt(data, 192, 32)
+	swapFeeRatePerMillion := common.GetBigInt(data, 192, 32).Uint64()
 	maximumSwapFee := common.GetBigInt(data, 224, 32)
 	minimumSwapFee := common.GetBigInt(data, 256, 32)
 	config = &TokenConfig{
-		Decimals:          decimals,
-		ContractAddress:   contractAddress,
-		ContractVersion:   contractVersion,
-		MaximumSwap:       FromBits(maximumSwap, decimals),
-		MinimumSwap:       FromBits(minimumSwap, decimals),
-		BigValueThreshold: FromBits(bigValueThreshold, decimals),
-		SwapFeeRate:       FromBits(swapFeeRate, 6),
-		MaximumSwapFee:    FromBits(maximumSwapFee, decimals),
-		MinimumSwapFee:    FromBits(minimumSwapFee, decimals),
+		Decimals:              decimals,
+		ContractAddress:       contractAddress,
+		ContractVersion:       contractVersion,
+		MaximumSwap:           maximumSwap,
+		MinimumSwap:           minimumSwap,
+		BigValueThreshold:     bigValueThreshold,
+		SwapFeeRatePerMillion: swapFeeRatePerMillion,
+		MaximumSwapFee:        maximumSwapFee,
+		MinimumSwapFee:        minimumSwapFee,
 	}
 	return config, err
 }

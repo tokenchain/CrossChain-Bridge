@@ -352,16 +352,16 @@ func genSetTokenConfigData(ctx *cli.Context) error {
 	}
 	decimals := uint8(decimalsVal)
 	tokenCfg := &router.TokenConfig{
-		TokenID:           ctx.String(cTokenIDFlag.Name),
-		Decimals:          decimals,
-		ContractAddress:   ctx.String(cContractAddressFlag.Name),
-		ContractVersion:   ctx.Uint64(cContractVersionFlag.Name),
-		MaximumSwap:       ctx.Float64(cMaximumSwapFlag.Name),
-		MinimumSwap:       ctx.Float64(cMinimumSwapFlag.Name),
-		BigValueThreshold: ctx.Float64(cBigValueThresholdFlag.Name),
-		SwapFeeRate:       ctx.Float64(cSwapFeeRateFlag.Name),
-		MaximumSwapFee:    ctx.Float64(cMaximumSwapFeeFlag.Name),
-		MinimumSwapFee:    ctx.Float64(cMinimumSwapFeeFlag.Name),
+		TokenID:               ctx.String(cTokenIDFlag.Name),
+		Decimals:              decimals,
+		ContractAddress:       ctx.String(cContractAddressFlag.Name),
+		ContractVersion:       ctx.Uint64(cContractVersionFlag.Name),
+		MaximumSwap:           router.ToBits(ctx.Float64(cMaximumSwapFlag.Name), decimals),
+		MinimumSwap:           router.ToBits(ctx.Float64(cMinimumSwapFlag.Name), decimals),
+		BigValueThreshold:     router.ToBits(ctx.Float64(cBigValueThresholdFlag.Name), decimals),
+		SwapFeeRatePerMillion: uint64(ctx.Float64(cSwapFeeRateFlag.Name) * 1000000),
+		MaximumSwapFee:        router.ToBits(ctx.Float64(cMaximumSwapFeeFlag.Name), decimals),
+		MinimumSwapFee:        router.ToBits(ctx.Float64(cMinimumSwapFeeFlag.Name), decimals),
 	}
 	err = tokenCfg.CheckConfig()
 	if err != nil {
@@ -380,12 +380,12 @@ func genSetTokenConfigData(ctx *cli.Context) error {
 		decimals,
 		common.HexToAddress(tokenCfg.ContractAddress),
 		tokenCfg.ContractVersion,
-		router.ToBits(tokenCfg.MaximumSwap, decimals),
-		router.ToBits(tokenCfg.MinimumSwap, decimals),
-		router.ToBits(tokenCfg.BigValueThreshold, decimals),
-		uint64(tokenCfg.SwapFeeRate*1000000),
-		router.ToBits(tokenCfg.MaximumSwapFee, decimals),
-		router.ToBits(tokenCfg.MinimumSwapFee, decimals),
+		tokenCfg.MaximumSwap,
+		tokenCfg.MinimumSwap,
+		tokenCfg.BigValueThreshold,
+		tokenCfg.SwapFeeRatePerMillion,
+		tokenCfg.MaximumSwapFee,
+		tokenCfg.MinimumSwapFee,
 	)
 	fmt.Println("set token config input data is", common.ToHex(inputData))
 	return nil

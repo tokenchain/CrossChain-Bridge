@@ -51,7 +51,7 @@ func (b *CrossChainBridgeBase) GetTokenConfig(token string) *TokenConfig {
 
 // GetBigValueThreshold get big value threshold
 func (b *CrossChainBridgeBase) GetBigValueThreshold(token string) *big.Int {
-	return b.GetTokenConfig(token).GetBigValueThreshold()
+	return b.GetTokenConfig(token).BigValueThreshold
 }
 
 // CheckTokenSwapValue check swap value is in right range
@@ -59,10 +59,10 @@ func CheckTokenSwapValue(token *TokenConfig, value *big.Int) bool {
 	if value == nil {
 		return false
 	}
-	if value.Cmp(token.minSwap) < 0 {
+	if value.Cmp(token.MinimumSwap) < 0 {
 		return false
 	}
-	if value.Cmp(token.maxSwap) > 0 {
+	if value.Cmp(token.MaximumSwap) > 0 {
 		return false
 	}
 	swappedValue := CalcSwapValue(token, value)
@@ -71,18 +71,17 @@ func CheckTokenSwapValue(token *TokenConfig, value *big.Int) bool {
 
 // CalcSwapValue calc swap value (get rid of fee)
 func CalcSwapValue(token *TokenConfig, value *big.Int) *big.Int {
-	if token.SwapFeeRate == 0.0 {
+	if token.SwapFeeRatePerMillion == 0 {
 		return value
 	}
 
-	feeRateMul1e18 := new(big.Int).SetUint64(uint64(token.SwapFeeRate * 1e18))
-	swapFee := new(big.Int).Mul(value, feeRateMul1e18)
-	swapFee.Div(swapFee, big.NewInt(1e18))
+	swapFee := new(big.Int).Mul(value, new(big.Int).SetUint64(token.SwapFeeRatePerMillion))
+	swapFee.Div(swapFee, big.NewInt(1000000))
 
-	if swapFee.Cmp(token.minSwapFee) < 0 {
-		swapFee = token.minSwapFee
-	} else if swapFee.Cmp(token.maxSwapFee) > 0 {
-		swapFee = token.maxSwapFee
+	if swapFee.Cmp(token.MinimumSwapFee) < 0 {
+		swapFee = token.MinimumSwapFee
+	} else if swapFee.Cmp(token.MaximumSwapFee) > 0 {
+		swapFee = token.MaximumSwapFee
 	}
 
 	if value.Cmp(swapFee) > 0 {
