@@ -101,25 +101,25 @@ func (c *TokenConfig) CheckConfig() error {
 	if c.ContractAddress == "" {
 		return errors.New("token must config 'ContractAddress'")
 	}
-	if c.MaximumSwap.Sign() <= 0 {
+	if c.MaximumSwap == nil || c.MaximumSwap.Sign() <= 0 {
 		return errors.New("token must config 'MaximumSwap' (positive)")
 	}
-	if c.MinimumSwap.Sign() <= 0 {
+	if c.MinimumSwap == nil || c.MinimumSwap.Sign() <= 0 {
 		return errors.New("token must config 'MinimumSwap' (positive)")
 	}
 	if c.MinimumSwap.Cmp(c.MaximumSwap) > 0 {
 		return errors.New("wrong token config, MinimumSwap > MaximumSwap")
 	}
-	if c.BigValueThreshold.Sign() <= 0 {
+	if c.BigValueThreshold == nil || c.BigValueThreshold.Sign() <= 0 {
 		return errors.New("token must config 'BigValueThreshold' (positive)")
 	}
 	if c.SwapFeeRatePerMillion >= 1000000 {
 		return errors.New("token must config 'SwapFeeRatePerMillion' (< 1000000)")
 	}
-	if c.MaximumSwapFee.Sign() < 0 {
+	if c.MaximumSwapFee == nil || c.MaximumSwapFee.Sign() < 0 {
 		return errors.New("token must config 'MaximumSwapFee' (non-negative)")
 	}
-	if c.MinimumSwapFee.Sign() < 0 {
+	if c.MinimumSwapFee == nil || c.MinimumSwapFee.Sign() < 0 {
 		return errors.New("token must config 'MinimumSwapFee' (non-negative)")
 	}
 	if c.MinimumSwapFee.Cmp(c.MaximumSwapFee) > 0 {

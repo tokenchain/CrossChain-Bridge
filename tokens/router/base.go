@@ -3,6 +3,8 @@ package router
 import (
 	"math/big"
 	"strings"
+
+	cmath "github.com/anyswap/CrossChain-Bridge/common/math"
 )
 
 // CrossChainBridgeBase base bridge
@@ -88,4 +90,33 @@ func CalcSwapValue(token *TokenConfig, value *big.Int) *big.Int {
 		return new(big.Int).Sub(value, swapFee)
 	}
 	return big.NewInt(0)
+}
+
+// ToBits calc
+func ToBits(valueStr string, decimals uint8) *big.Int {
+	parts := strings.Split(valueStr, ".")
+	if len(parts) > 2 {
+		return nil
+	}
+
+	ipart, ok := new(big.Int).SetString(parts[0], 10)
+	if !ok {
+		return nil
+	}
+
+	oneToken := cmath.BigPow(10, int64(decimals))
+	result := new(big.Int).Mul(ipart, oneToken)
+
+	var dpart *big.Int
+	if len(parts) > 1 {
+		dpart, ok = new(big.Int).SetString(parts[1], 10)
+		if !ok {
+			return nil
+		}
+		dpart.Mul(dpart, oneToken)
+		dpart.Div(dpart, cmath.BigPow(10, int64(len(parts[1]))))
+		result.Add(result, dpart)
+	}
+
+	return result
 }

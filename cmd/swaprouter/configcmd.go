@@ -265,22 +265,22 @@ generate TokenConfig json marshal data
 		Usage: "token config (require)",
 	}
 
-	cMaximumSwapFlag = &cli.Float64Flag{
+	cMaximumSwapFlag = &cli.StringFlag{
 		Name:  "c.MaximumSwap",
 		Usage: "token config (require)",
 	}
 
-	cMinimumSwapFlag = &cli.Float64Flag{
+	cMinimumSwapFlag = &cli.StringFlag{
 		Name:  "c.MinimumSwap",
 		Usage: "token config (require)",
 	}
 
-	cBigValueThresholdFlag = &cli.Float64Flag{
+	cBigValueThresholdFlag = &cli.StringFlag{
 		Name:  "c.BigValueThreshold",
 		Usage: "token config (require)",
 	}
 
-	cSwapFeeRateFlag = &cli.Float64Flag{
+	cSwapFeeRateFlag = &cli.StringFlag{
 		Name:  "c.SwapFeeRate",
 		Usage: "token config (require)",
 	}
@@ -290,7 +290,7 @@ generate TokenConfig json marshal data
 		Usage: "token config",
 	}
 
-	cMinimumSwapFeeFlag = &cli.Float64Flag{
+	cMinimumSwapFeeFlag = &cli.StringFlag{
 		Name:  "c.MinimumSwapFee",
 		Usage: "token config",
 	}
@@ -356,12 +356,12 @@ func genSetTokenConfigData(ctx *cli.Context) error {
 		Decimals:              decimals,
 		ContractAddress:       ctx.String(cContractAddressFlag.Name),
 		ContractVersion:       ctx.Uint64(cContractVersionFlag.Name),
-		MaximumSwap:           router.ToBits(ctx.Float64(cMaximumSwapFlag.Name), decimals),
-		MinimumSwap:           router.ToBits(ctx.Float64(cMinimumSwapFlag.Name), decimals),
-		BigValueThreshold:     router.ToBits(ctx.Float64(cBigValueThresholdFlag.Name), decimals),
+		MaximumSwap:           router.ToBits(ctx.String(cMaximumSwapFlag.Name), decimals),
+		MinimumSwap:           router.ToBits(ctx.String(cMinimumSwapFlag.Name), decimals),
+		BigValueThreshold:     router.ToBits(ctx.String(cBigValueThresholdFlag.Name), decimals),
 		SwapFeeRatePerMillion: uint64(ctx.Float64(cSwapFeeRateFlag.Name) * 1000000),
-		MaximumSwapFee:        router.ToBits(ctx.Float64(cMaximumSwapFeeFlag.Name), decimals),
-		MinimumSwapFee:        router.ToBits(ctx.Float64(cMinimumSwapFeeFlag.Name), decimals),
+		MaximumSwapFee:        router.ToBits(ctx.String(cMaximumSwapFeeFlag.Name), decimals),
+		MinimumSwapFee:        router.ToBits(ctx.String(cMinimumSwapFeeFlag.Name), decimals),
 	}
 	err = tokenCfg.CheckConfig()
 	if err != nil {

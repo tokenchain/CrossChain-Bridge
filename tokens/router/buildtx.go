@@ -199,13 +199,3 @@ func (b *Bridge) checkBalance(token, account string, amount *big.Int) (err error
 	}
 	return err
 }
-
-// FromBits call tokens.FromBits
-func FromBits(value *big.Int, decimals uint8) float64 {
-	return tokens.FromBits(value, decimals)
-}
-
-// ToBits call tokens.ToBits
-func ToBits(value float64, decimals uint8) *big.Int {
-	return tokens.ToBits(value, decimals)
-}
