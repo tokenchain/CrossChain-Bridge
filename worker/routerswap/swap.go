@@ -105,11 +105,11 @@ func processRouterSwap(swap *mongodb.MgoSwap) (err error) {
 
 	args := &tokens.BuildTxArgs{
 		SwapInfo: tokens.SwapInfo{
-			PairID:   swap.PairID,
-			SwapID:   txid,
-			SwapType: tokens.RouterSwapType,
-			TxType:   tokens.SwapTxType(swap.TxType),
-			Bind:     bind,
+			Identifier: params.GetIdentifier(),
+			SwapID:     txid,
+			SwapType:   tokens.RouterSwapType,
+			TxType:     tokens.SwapTxType(swap.TxType),
+			Bind:       bind,
 		},
 		From:        dstBridge.ChainConfig.GetRouterMPC(),
 		OriginValue: value,
