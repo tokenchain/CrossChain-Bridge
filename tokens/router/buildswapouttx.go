@@ -20,6 +20,8 @@ var (
 	AnySwapInFuncHash = common.FromHex("0x825bb13c")
 	// anySwapInUnderlying(bytes32 txs, address token, address to, uint amount, uint fromChainID)
 	AnySwapInUnderlyingFuncHash = common.FromHex("0x3f88de89")
+	// anySwapInAuto(bytes32 txs, address token, address to, uint amount, uint fromChainID)
+	AnySwapInAutoFuncHash = common.FromHex("0x0175b1c4")
 	// anySwapInExactTokensForTokens(bytes32 txs, uint amountIn, uint amountOutMin, address[] path, address to, uint deadline, uint fromChainID)
 	AnySwapInExactTokensForTokensFuncHash = common.FromHex("0x2fc1e728")
 	// anySwapInExactTokensForNative(bytes32 txs, uint amountIn, uint amountOutMin, address[] path, address to, uint deadline, uint fromChainID)
@@ -46,7 +48,7 @@ func (b *Bridge) buildRouterSwapoutTxInput(args *tokens.BuildTxArgs) (err error)
 	if args.ForUnderlying {
 		funcHash = AnySwapInUnderlyingFuncHash
 	} else {
-		funcHash = AnySwapInFuncHash
+		funcHash = AnySwapInAutoFuncHash // old:AnySwapInFuncHash
 	}
 
 	multichainToken := GetCachedMultichainToken(args.TokenID, args.ToChainID.String())
