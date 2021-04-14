@@ -29,6 +29,8 @@ type RouterServerConfig struct {
 
 	ChainIDBlackList []string
 	TokenIDBlackList []string
+
+	EnableReplaceSwap bool
 }
 
 // RouterConfig config
@@ -50,6 +52,11 @@ type OnchainConfig struct {
 // GetRouterConfig get router config
 func GetRouterConfig() *RouterConfig {
 	return routerConfig
+}
+
+// GetRouterServerConfig get router server config
+func GetRouterServerConfig() *RouterServerConfig {
+	return routerConfig.Server
 }
 
 // HasRouterAdmin has admin

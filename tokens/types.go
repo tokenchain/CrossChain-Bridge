@@ -39,18 +39,16 @@ type ChainConfig struct {
 	MaxGasPriceFluctPercent uint64 `json:",omitempty"`
 	WaitTimeToReplace       int64  // seconds
 	MaxReplaceCount         int
-
-	RouterContract     string `json:",omitempty"`
-	RouterMPC          string `json:",omitempty"`
-	SwapDeadlineOffset int64  `json:",omitempty"` // seconds
+	EnableReplaceSwap       bool
 
 	chainID *big.Int
 }
 
 // GatewayConfig struct
 type GatewayConfig struct {
-	APIAddress []string
-	Extras     *GatewayExtras
+	APIAddress    []string
+	APIAddressExt []string
+	Extras        *GatewayExtras
 }
 
 // GatewayExtras struct

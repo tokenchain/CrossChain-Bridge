@@ -7,6 +7,7 @@ import (
 
 	"github.com/anyswap/CrossChain-Bridge/common"
 	"github.com/anyswap/CrossChain-Bridge/mongodb"
+	"github.com/anyswap/CrossChain-Bridge/params"
 	"github.com/anyswap/CrossChain-Bridge/tokens"
 	"github.com/anyswap/CrossChain-Bridge/tokens/router"
 )
@@ -19,6 +20,10 @@ var (
 // StartReplaceJob replace job
 func StartReplaceJob() {
 	logWorker("replace", "start router swap replace job")
+	if !params.GetRouterServerConfig().EnableReplaceSwap {
+		logWorker("replace", "stop replace swap job as disabled")
+		return
+	}
 	for {
 		res, err := findRouterSwapResultToReplace()
 		if err != nil {
@@ -81,7 +86,7 @@ func ReplaceRouterSwap(res *mongodb.MgoSwapResult, gasPrice *big.Int) error {
 	nonce := res.SwapNonce
 	args := &tokens.BuildTxArgs{
 		SwapInfo: tokens.SwapInfo{
-			Identifier: tokens.ReplaceSwapIdentifier,
+			Identifier: params.GetIdentifier(),
 			SwapID:     txid,
 			SwapType:   tokens.RouterSwapType,
 			TxType:     tokens.SwapTxType(swap.TxType),
