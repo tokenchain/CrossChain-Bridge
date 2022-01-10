@@ -177,13 +177,18 @@ func updateSwapStatus(pairID, txid, bind string, swapInfo *tokens.TxSwapInfo, is
 		errors.Is(err, tokens.ErrSwapIsClosed),
 		errors.Is(err, tokens.ErrTxWithWrongReceipt),
 		errors.Is(err, tokens.ErrTxIncompatible),
+		errors.Is(err, tokens.ErrNotFound),
 		errors.Is(err, tokens.ErrRPCQueryError):
 		return err
 	case err == nil:
 		status := mongodb.TxNotSwapped
 		if swapInfo.Value.Cmp(tokens.GetBigValueThreshold(pairID, isSwapin)) > 0 {
-			status = mongodb.TxWithBigValue
-			resultStatus = mongodb.TxWithBigValue
+			tokenCfg := tokens.GetTokenConfig(pairID, isSwapin)
+			if !tokenCfg.IsInBigValueWhitelist(swapInfo.From) &&
+				!tokenCfg.IsInBigValueWhitelist(swapInfo.TxTo) {
+				status = mongodb.TxWithBigValue
+				resultStatus = mongodb.TxWithBigValue
+			}
 		}
 		err = mongodb.UpdateSwapStatus(isSwapin, txid, pairID, bind, status, now(), "")
 	case errors.Is(err, tokens.ErrTxWithWrongMemo):

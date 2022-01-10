@@ -1,5 +1,9 @@
 package dcrm
 
+import (
+	"strings"
+)
+
 // DataEnode enode
 type DataEnode struct {
 	Enode string
@@ -44,6 +48,16 @@ type SignStatus struct {
 	TimeStamp string
 }
 
+// HasDisagree has disagree reply
+func (s *SignStatus) HasDisagree() bool {
+	for _, reply := range s.AllReply {
+		if strings.EqualFold(reply.Status, "DisAgree") {
+			return true
+		}
+	}
+	return false
+}
+
 // SignInfoData sign info
 type SignInfoData struct {
 	Account    string
@@ -63,7 +77,7 @@ type SignInfoData struct {
 
 // IsValid is valid
 func (signInfo *SignInfoData) IsValid() bool {
-	return signInfo.Key != "" && signInfo.Account != "" && signInfo.GroupID != ""
+	return signInfo != nil && signInfo.Key != "" && signInfo.Account != "" && signInfo.GroupID != ""
 }
 
 // SignInfoResp sign info response

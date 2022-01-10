@@ -81,6 +81,7 @@ type ChainConfig struct {
 	MaxReplaceCount            int
 	FixedGasPrice              string `json:",omitempty"`
 	MaxGasPrice                string `json:",omitempty"`
+	MinGasPrice                string `json:",omitempty"`
 
 	PlusGasTipCapPercent uint64
 	PlusGasFeeCapPercent uint64
@@ -92,6 +93,7 @@ type ChainConfig struct {
 	chainID       *big.Int
 	fixedGasPrice *big.Int
 	maxGasPrice   *big.Int
+	minGasPrice   *big.Int
 	minReserveFee *big.Int
 	maxGasTipCap  *big.Int
 	maxGasFeeCap  *big.Int
@@ -135,6 +137,8 @@ type TokenConfig struct {
 	AllowSwapinFromContract  bool   `json:",omitempty"`
 	AllowSwapoutFromContract bool   `json:",omitempty"`
 
+	BigValueWhitelist []string `json:",omitempty"`
+
 	// use private key address instead
 	DcrmAddressKeyStore string `json:"-"`
 	DcrmAddressPassword string `json:"-"`
@@ -147,6 +151,8 @@ type TokenConfig struct {
 	maxSwapFee       *big.Int
 	minSwapFee       *big.Int
 	bigValThreshhold *big.Int
+
+	bigValueWhitelist map[string]struct{}
 }
 
 // CheckConfig check chain config
@@ -174,22 +180,29 @@ func (c *ChainConfig) CheckConfig(isServer bool) error {
 	}
 	if c.BaseGasPrice != "" {
 		if _, err := common.GetBigIntFromStr(c.BaseGasPrice); err != nil {
-			return errors.New("wrong 'BaseGasPrice'")
+			return fmt.Errorf("wrong BaseGasPrice: %w", err)
 		}
 	}
 	if c.FixedGasPrice != "" {
 		fixedGasPrice, err := common.GetBigIntFromStr(c.FixedGasPrice)
 		if err != nil {
-			return err
+			return fmt.Errorf("wrong FixedGasPrice: %w", err)
 		}
 		c.fixedGasPrice = fixedGasPrice
 	}
 	if c.MaxGasPrice != "" {
 		maxGasPrice, err := common.GetBigIntFromStr(c.MaxGasPrice)
 		if err != nil {
-			return err
+			return fmt.Errorf("wrong MaxGasPrice: %w", err)
 		}
 		c.maxGasPrice = maxGasPrice
+	}
+	if c.MinGasPrice != "" {
+		minGasPrice, err := common.GetBigIntFromStr(c.MinGasPrice)
+		if err != nil {
+			return fmt.Errorf("wrong MinGasPrice: %w", err)
+		}
+		c.minGasPrice = minGasPrice
 	}
 	if c.MinReserveFee != "" {
 		bi, ok := new(big.Int).SetString(c.MinReserveFee, 10)
@@ -247,10 +260,19 @@ func (c *ChainConfig) CheckConfig(isServer bool) error {
 			}
 		}
 	}
+	if c.minGasPrice != nil {
+		if c.fixedGasPrice != nil {
+			return errors.New("FixedGasPrice and MinGasPrice are conflicted")
+		}
+		if c.maxGasPrice != nil && c.minGasPrice.Cmp(c.maxGasPrice) > 0 {
+			return errors.New("MinGasPrice > MaxGasPrice")
+		}
+	}
 	log.Info("check chain config success",
 		"blockChain", c.BlockChain,
 		"fixedGasPrice", c.FixedGasPrice,
 		"maxGasPrice", c.MaxGasPrice,
+		"minGasPrice", c.MinGasPrice,
 		"baseFeePercent", c.BaseFeePercent,
 	)
 	return nil
@@ -355,6 +377,19 @@ func (c *TokenConfig) CheckConfig(isSrc bool) (err error) {
 	if err != nil {
 		return err
 	}
+	if len(c.BigValueWhitelist) > 0 {
+		c.bigValueWhitelist = make(map[string]struct{}, len(c.BigValueWhitelist))
+		for _, addr := range c.BigValueWhitelist {
+			if !common.IsHexAddress(addr) {
+				return fmt.Errorf("wrong address '%v' in 'BigValueWhitelist'", addr)
+			}
+			key := strings.ToLower(addr)
+			if _, exist := c.bigValueWhitelist[key]; exist {
+				return fmt.Errorf("duplicate address '%v' in 'BigValueWhitelist'", addr)
+			}
+			c.bigValueWhitelist[key] = struct{}{}
+		}
+	}
 	log.Info("check token config success",
 		"id", c.ID, "name", c.Name, "symbol", c.Symbol, "decimals", *c.Decimals,
 		"depositAddress", c.DepositAddress, "contractAddress", c.ContractAddress,
@@ -387,6 +422,7 @@ func (c *TokenConfig) CalcAndStoreValue() {
 		"name", c.Name, "decimals", *c.Decimals, "contractAddress", c.ContractAddress,
 		"maxSwap", c.maxSwap, "minSwap", c.minSwap, "bigValThreshhold", c.bigValThreshhold,
 		"maxSwapFee", c.maxSwapFee, "minSwapFee", c.minSwapFee, "swapFeeRate", c.SwapFeeRate,
+		"bigValueWhitelist", c.bigValueWhitelist,
 	)
 }
 
@@ -430,6 +466,14 @@ func (c *ChainConfig) GetMaxGasPrice() *big.Int {
 	return nil
 }
 
+// GetMinGasPrice get min gas price
+func (c *ChainConfig) GetMinGasPrice() *big.Int {
+	if c.minGasPrice != nil {
+		return new(big.Int).Set(c.minGasPrice) // clone
+	}
+	return nil
+}
+
 // GetMinReserveFee get min reserve fee
 func (c *ChainConfig) GetMinReserveFee() *big.Int {
 	return c.minReserveFee
@@ -453,6 +497,15 @@ func (c *TokenConfig) IsErc20() bool {
 // IsProxyErc20 return if token is proxy contract of erc20
 func (c *TokenConfig) IsProxyErc20() bool {
 	return strings.EqualFold(c.ID, "ProxyERC20")
+}
+
+// IsInBigValueWhitelist is in big value whitelist
+func (c *TokenConfig) IsInBigValueWhitelist(caller string) bool {
+	if c.bigValueWhitelist == nil {
+		return false
+	}
+	_, exist := c.bigValueWhitelist[strings.ToLower(caller)]
+	return exist
 }
 
 // GetDcrmAddressPrivateKey get private key
